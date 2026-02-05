@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' transform='scale(-1,1) translate(-100,0)'>🌿</text></svg>">
+<style>
+:root {
+  --bg-deep: #0a0e0a;
+  --bg-main: #111611;
+  --bg-card: #1a201a;
+  --bg-hover: #222a22;
+  --border: #2a352a;
+  --border-light: #354035;
+  --text-primary: #d4ddd4;
+  --text-secondary: #8a9a8a;
+  --text-dim: #5a6a5a;
+  --accent-green: #4a8;
+  --accent-bright: #6c6;
+  --accent-yellow: #ca4;
+  --accent-red: #c54;
+  --accent-blue: #48a;
+  --accent-purple: #84a;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--accent-green);
+  letter-spacing: 0.02em;
+}
+.header h1 span { font-size: 1.5rem; margin-right: 0.4rem; }
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.signal-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.3rem;
+}
+.signal-green { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+.signal-yellow { background: var(--accent-yellow); box-shadow: 0 0 6px var(--accent-yellow); }
+.signal-red { background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red); }
+
+/* Layout */
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .dashboard { grid-template-columns: 1fr; }
+}
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.card-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-header h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.card-header .badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg-deep);
+  color: var(--text-secondary);
+}
+.card-body {
+  padding: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+.card-body::-webkit-scrollbar { width: 6px; }
+.card-body::-webkit-scrollbar-track { background: var(--bg-card); }
+.card-body::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+.card-full { grid-column: 1 / -1; }
+
+/* Creature Map */
+.creature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+.creature-tile {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.creature-tile:hover {
+  border-color: var(--accent-green);
+  background: var(--bg-hover);
+}
+.creature-tile .emoji { font-size: 1.8rem; margin-bottom: 0.3rem; }
+.creature-tile .name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+.creature-tile .thread {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.creature-tile .status-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-top: 0.4rem;
+}
+.status-active { background: rgba(68,170,136,0.2); color: var(--accent-green); }
+.status-resting { background: rgba(204,170,68,0.2); color: var(--accent-yellow); }
+.status-sleeping { background: rgba(136,68,170,0.2); color: var(--accent-purple); }
+.status-hibernating { background: rgba(100,100,100,0.2); color: var(--text-dim); }
+
+.no-data {
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+}
+
+/* Timeline */
+.timeline-event {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.timeline-event:last-child { border-bottom: none; }
+.timeline-type {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.type-hatch { background: rgba(68,170,136,0.2); color: var(--accent-green); }
+.type-hibernate { background: rgba(136,68,170,0.2); color: var(--accent-purple); }
+.type-wake { background: rgba(204,170,68,0.2); color: var(--accent-yellow); }
+.type-system { background: rgba(68,136,170,0.2); color: var(--accent-blue); }
+.type-milestone { background: rgba(204,136,68,0.2); color: #ca8; }
+.type-compost { background: rgba(100,100,100,0.2); color: var(--text-dim); }
+.type-gardener-tick { background: rgba(68,136,68,0.15); color: #6a6; }
+.type-resource-check { background: rgba(68,170,170,0.15); color: #4aa; }
+
+.timeline-content {
+  flex: 1;
+  font-size: 0.85rem;
+}
+.timeline-meta {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+}
+
+/* Usage Gauge */
+.gauge-container {
+  padding: 0.5rem 0;
+}
+.gauge-bar-outer {
+  width: 100%;
+  height: 24px;
+  background: var(--bg-deep);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+.gauge-bar-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+.gauge-bar-fill.green { background: linear-gradient(90deg, #2a5a3a, var(--accent-green)); }
+.gauge-bar-fill.yellow { background: linear-gradient(90deg, #5a4a2a, var(--accent-yellow)); }
+.gauge-bar-fill.red { background: linear-gradient(90deg, #5a2a2a, var(--accent-red)); }
+.gauge-target-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--text-secondary);
+  z-index: 2;
+}
+.gauge-target-label {
+  position: absolute;
+  top: -18px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  transform: translateX(-50%);
+}
+.gauge-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.gauge-stats .value { color: var(--text-primary); font-weight: 600; }
+.recommendation {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-deep);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--accent-green);
+}
+.recommendation.yellow { border-left-color: var(--accent-yellow); }
+.recommendation.red { border-left-color: var(--accent-red); }
+
+/* Cron Monitor */
+.cron-table {
+  width: 100%;
+  font-size: 0.82rem;
+  border-collapse: collapse;
+}
+.cron-table th {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.cron-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.cron-enabled { color: var(--accent-green); }
+.cron-disabled { color: var(--text-dim); }
+
+/* Detail Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 1;
+}
+.modal-header h2 { font-size: 1.1rem; }
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+}
+.modal-close:hover { color: var(--text-primary); }
+.modal-body {
+  padding: 1.25rem;
+}
+.modal-body pre {
+  background: var(--bg-deep);
+  padding: 1rem;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  color: var(--text-secondary);
+}
+.modal-section {
+  margin-bottom: 1.25rem;
+}
+.modal-section h3 {
+  font-size: 0.85rem;
+  color: var(--accent-green);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Links */
+.link-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.link-btn {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent-green);
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: all 0.2s;
+}
+.link-btn:hover {
+  border-color: var(--accent-green);
+  background: var(--bg-hover);
+}
+
+/* Auto-refresh indicator */
+.refresh-pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Billboard preview */
+.billboard-content {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>🌿</span> Terrarium</h1>
+  <div class="header-status">
+    <span id="signal-indicator"><span class="signal-dot signal-green"></span> <span id="signal-text">Initializing...</span></span>
+    <span id="last-updated" style="font-size:0.75rem; color:var(--text-dim)"></span>
+    <div class="refresh-pulse" title="Auto-refreshing every 30s"></div>
+  </div>
+</div>
+
+<div class="dashboard">
+
+  <!-- Creature Map -->
+  <div class="card card-full">
+    <div class="card-header">
+      <h2>🗺️ Creature Map</h2>
+      <span class="badge" id="creature-count">0 creatures</span>
+    </div>
+    <div class="card-body" id="creature-map">
+      <div class="no-data">No creatures hatched yet. The terrarium awaits its first inhabitants.</div>
+    </div>
+  </div>
+
+  <!-- Grant (Ground Truth Usage) -->
+  <div class="card card-full">
+    <div class="card-header">
+      <h2>💰 Grant Budget (Claude Max)</h2>
+      <span class="badge" id="grant-updated">—</span>
+    </div>
+    <div class="card-body">
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;" id="grant-gauges">
+        <!-- Session (5h window) -->
+        <div class="gauge-container">
+          <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">
+            ⏱️ Session (5h window)
+          </div>
+          <div class="gauge-bar-outer">
+            <div class="gauge-bar-fill green" id="grant-session-fill" style="width:0%"></div>
+          </div>
+          <div class="gauge-stats">
+            <span><span class="value" id="grant-session-pct">—</span></span>
+            <span style="font-size:0.7rem;" id="grant-session-reset">—</span>
+          </div>
+        </div>
+        <!-- Weekly (all models) -->
+        <div class="gauge-container">
+          <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">
+            📅 Weekly (all models)
+          </div>
+          <div class="gauge-bar-outer">
+            <div class="gauge-bar-fill green" id="grant-week-fill" style="width:0%"></div>
+          </div>
+          <div class="gauge-stats">
+            <span><span class="value" id="grant-week-pct">—</span></span>
+            <span style="font-size:0.7rem;" id="grant-week-reset">—</span>
+          </div>
+        </div>
+        <!-- Weekly (Sonnet only) -->
+        <div class="gauge-container">
+          <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:0.4rem;">
+            🎵 Weekly (Sonnet only)
+          </div>
+          <div class="gauge-bar-outer">
+            <div class="gauge-bar-fill green" id="grant-sonnet-fill" style="width:0%"></div>
+          </div>
+          <div class="gauge-stats">
+            <span><span class="value" id="grant-sonnet-pct">—</span></span>
+            <span style="font-size:0.7rem;" id="grant-sonnet-reset">—</span>
+          </div>
+        </div>
+      </div>
+      <div id="grant-recommendation" class="recommendation" style="margin-top:0.75rem;">
+        Waiting for first probe...
+      </div>
+    </div>
+  </div>
+
+  <!-- Internal Resource Tracking -->
+  <div class="card">
+    <div class="card-header">
+      <h2>📊 Terrarium Usage</h2>
+      <span class="badge" id="trajectory-badge">—</span>
+    </div>
+    <div class="card-body">
+      <div class="gauge-container" id="usage-gauge">
+        <div class="gauge-bar-outer">
+          <div class="gauge-bar-fill green" id="gauge-fill" style="width:0%"></div>
+          <div class="gauge-target-line" id="gauge-target" style="left:0%">
+            <span class="gauge-target-label">target</span>
+          </div>
+        </div>
+        <div class="gauge-stats">
+          <span>Usage: <span class="value" id="usage-pct">0%</span></span>
+          <span>Target: <span class="value" id="target-pct">0%</span></span>
+          <span>Signal: <span class="value" id="signal-val">—</span></span>
+        </div>
+        <div class="recommendation" id="recommendation">Waiting for first resource check...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cron Monitor -->
+  <div class="card">
+    <div class="card-header">
+      <h2>⏰ Cron Monitor</h2>
+      <span class="badge" id="cron-count">—</span>
+    </div>
+    <div class="card-body" id="cron-body">
+      <div class="no-data">Loading cron jobs...</div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="card">
+    <div class="card-header">
+      <h2>📜 Timeline</h2>
+      <span class="badge" id="event-count">0 events</span>
+    </div>
+    <div class="card-body" id="timeline-body" style="max-height:400px;">
+      <div class="no-data">No events yet.</div>
+    </div>
+  </div>
+
+  <!-- Billboard -->
+  <div class="card">
+    <div class="card-header">
+      <h2>📋 Billboard</h2>
+    </div>
+    <div class="card-body" id="billboard-body">
+      <div class="no-data">Loading billboard...</div>
+    </div>
+  </div>
+
+  <!-- Links & Museum -->
+  <div class="card card-full">
+    <div class="card-header">
+      <h2>🔗 Quick Links</h2>
+    </div>
+    <div class="card-body">
+      <div class="link-row" id="links-row">
+        <a class="link-btn" href="/viewer" target="_blank">👁️ Terrarium Viewer</a>
+        <a class="link-btn" href="/stage" target="_blank">🎬 Stage</a>
+        <a class="link-btn" id="link-museum" href="/museum" target="_blank">🏛️ Museum</a>
+        <a class="link-btn" id="link-quartet" href="#" target="_blank">🎵 Quartet Viewer</a>
+        <a class="link-btn" href="#" onclick="loadBillboard(); return false;">📋 Refresh Billboard</a>
+        <a class="link-btn" href="#" onclick="fetchAll(); return false;">🔄 Refresh All</a>
+      </div>
+      <div id="tunnel-links" style="margin-top:0.75rem; font-size:0.8rem; color:var(--text-dim);"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Detail</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  try {
+    const d = new Date(ts);
+    const now = new Date();
+    const secs = Math.floor((now - d) / 1000);
+    if (secs < 60) return secs + 's ago';
+    if (secs < 3600) return Math.floor(secs/60) + 'm ago';
+    if (secs < 86400) return Math.floor(secs/3600) + 'h ago';
+    return Math.floor(secs/86400) + 'd ago';
+  } catch(e) { return ts; }
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Creatures ───
+async function loadCreatures() {
+  try {
+    const res = await fetch(API + '/api/creatures');
+    const data = await res.json();
+    const creatures = data.creatures || {};
+    const keys = Object.keys(creatures);
+    document.getElementById('creature-count').textContent = keys.length + ' creature' + (keys.length !== 1 ? 's' : '');
+
+    if (keys.length === 0) {
+      document.getElementById('creature-map').innerHTML = '<div class="no-data">No creatures hatched yet. The terrarium awaits its first inhabitants.</div>';
+      return;
+    }
+
+    let html = '<div class="creature-grid">';
+    for (const k of keys) {
+      const c = creatures[k];
+      const statusClass = 'status-' + (c.status || 'active');
+      html += `<div class="creature-tile" onclick="showCreature('${escapeHtml(k)}')">
+        <div class="emoji">${c.emoji || '🌱'}</div>
+        <div class="name">${escapeHtml(c.name || k)}</div>
+        <div class="thread">${escapeHtml(c.thread || '')}</div>
+        <span class="status-badge ${statusClass}">${c.status || 'unknown'}</span>
+      </div>`;
+    }
+    html += '</div>';
+    document.getElementById('creature-map').innerHTML = html;
+  } catch(e) {
+    document.getElementById('creature-map').innerHTML = '<div class="no-data">Could not load creatures: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+// ─── Creature Detail ───
+async function showCreature(name) {
+  document.getElementById('modal-title').textContent = '🔍 ' + name;
+  document.getElementById('modal-body').innerHTML = '<div class="no-data">Loading...</div>';
+  document.getElementById('modal-overlay').classList.add('open');
+
+  try {
+    const res = await fetch(API + '/api/creature/' + encodeURIComponent(name));
+    const d = await res.json();
+    let html = '';
+
+    if (d.state) {
+      html += '<div class="modal-section"><h3>STATE.md</h3><pre>' + escapeHtml(d.state) + '</pre></div>';
+    }
+    if (d.soul) {
+      html += '<div class="modal-section"><h3>SOUL.md</h3><pre>' + escapeHtml(d.soul) + '</pre></div>';
+    }
+    if (d.work_files && d.work_files.length > 0) {
+      html += '<div class="modal-section"><h3>Work Files</h3><pre>' + d.work_files.map(escapeHtml).join('\n') + '</pre></div>';
+    }
+    if (d.compost_files && d.compost_files.length > 0) {
+      html += '<div class="modal-section"><h3>Compost</h3><pre>' + d.compost_files.map(escapeHtml).join('\n') + '</pre></div>';
+    }
+    if (d.error) {
+      html = '<div class="no-data">' + escapeHtml(d.message || d.error) + '</div>';
+    }
+    document.getElementById('modal-body').innerHTML = html || '<div class="no-data">No details available.</div>';
+  } catch(e) {
+    document.getElementById('modal-body').innerHTML = '<div class="no-data">Error: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ─── Usage Gauge ───
+async function loadSignals() {
+  try {
+    const res = await fetch(API + '/api/signals');
+    const d = await res.json();
+
+    const usage = d.usagePercent || 0;
+    const target = d.targetPercent || 0;
+    const signal = d.signal || 'green';
+
+    document.getElementById('gauge-fill').style.width = Math.min(usage, 100) + '%';
+    document.getElementById('gauge-fill').className = 'gauge-bar-fill ' + signal;
+    document.getElementById('gauge-target').style.left = Math.min(target, 100) + '%';
+    document.getElementById('usage-pct').textContent = usage.toFixed(1) + '%';
+    document.getElementById('target-pct').textContent = target.toFixed(1) + '%';
+    document.getElementById('signal-val').textContent = signal.toUpperCase();
+    document.getElementById('trajectory-badge').textContent = d.trajectory || '—';
+
+    const rec = document.getElementById('recommendation');
+    rec.textContent = d.recommendation || 'No recommendation.';
+    rec.className = 'recommendation' + (signal !== 'green' ? ' ' + signal : '');
+
+    // Header signal — only if grant data hasn't claimed it (grant is ground truth)
+    if (!grantOwnsHeader) {
+      const dot = document.querySelector('#signal-indicator .signal-dot');
+      dot.className = 'signal-dot signal-' + signal;
+      document.getElementById('signal-text').textContent = signal.charAt(0).toUpperCase() + signal.slice(1) + ' — ' + (d.trajectory || '');
+    }
+
+    if (d.lastChecked) {
+      document.getElementById('last-updated').textContent = 'Checked ' + timeAgo(d.lastChecked);
+    }
+  } catch(e) {
+    document.getElementById('signal-text').textContent = 'Error loading signals';
+  }
+}
+
+// ─── Timeline ───
+async function loadTimeline() {
+  try {
+    const res = await fetch(API + '/api/timeline');
+    const data = await res.json();
+    const events = (data.events || []).slice().reverse();
+    document.getElementById('event-count').textContent = events.length + ' event' + (events.length !== 1 ? 's' : '');
+
+    if (events.length === 0) {
+      document.getElementById('timeline-body').innerHTML = '<div class="no-data">No events yet.</div>';
+      return;
+    }
+
+    let html = '';
+    for (const ev of events.slice(0, 100)) {
+      const typeClass = 'type-' + (ev.type || 'system').replace(/[^a-z-]/g, '');
+      html += `<div class="timeline-event">
+        <span class="timeline-type ${typeClass}">${escapeHtml(ev.type || '?')}</span>
+        <div>
+          <div class="timeline-content">${escapeHtml(ev.description || '')}</div>
+          <div class="timeline-meta">${escapeHtml(ev.actor || '')} · ${timeAgo(ev.timestamp)}</div>
+        </div>
+      </div>`;
+    }
+    document.getElementById('timeline-body').innerHTML = html;
+  } catch(e) {
+    document.getElementById('timeline-body').innerHTML = '<div class="no-data">Could not load timeline.</div>';
+  }
+}
+
+// ─── Cron Monitor ───
+async function loadCron() {
+  try {
+    const res = await fetch(API + '/api/cron');
+    const data = await res.json();
+
+    let jobs = [];
+    if (Array.isArray(data)) {
+      jobs = data;
+    } else if (data.jobs && Array.isArray(data.jobs)) {
+      jobs = data.jobs;
+    } else if (data.raw) {
+      // Try to parse raw text output
+      document.getElementById('cron-body').innerHTML = '<pre style="font-size:0.8rem;color:var(--text-secondary);white-space:pre-wrap;">' + escapeHtml(data.raw) + '</pre>';
+      document.getElementById('cron-count').textContent = 'raw';
+      return;
+    }
+
+    document.getElementById('cron-count').textContent = jobs.length + ' job' + (jobs.length !== 1 ? 's' : '');
+
+    if (jobs.length === 0) {
+      document.getElementById('cron-body').innerHTML = '<div class="no-data">No cron jobs configured yet.</div>';
+      return;
+    }
+
+    let html = '<table class="cron-table"><thead><tr><th>Name</th><th>Schedule</th><th>Agent</th><th>Status</th><th>Last Run</th></tr></thead><tbody>';
+    for (const j of jobs) {
+      const enabled = j.enabled !== false && j.disabled !== true;
+      const cls = enabled ? 'cron-enabled' : 'cron-disabled';
+      const schedule = j.cron || j.every || j.at || '—';
+      html += `<tr>
+        <td>${escapeHtml(j.name || j.id || '?')}</td>
+        <td style="font-family:var(--font-mono);font-size:0.78rem;">${escapeHtml(String(schedule))}</td>
+        <td>${escapeHtml(j.agent || '—')}</td>
+        <td class="${cls}">${enabled ? '● active' : '○ disabled'}</td>
+        <td style="color:var(--text-dim);font-size:0.78rem;">${j.lastRun ? timeAgo(j.lastRun) : '—'}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('cron-body').innerHTML = html;
+  } catch(e) {
+    document.getElementById('cron-body').innerHTML = '<div class="no-data">Could not load cron data.</div>';
+  }
+}
+
+// ─── Billboard ───
+async function loadBillboard() {
+  try {
+    const res = await fetch(API + '/api/billboard');
+    const data = await res.json();
+    const content = data.content || 'No billboard content.';
+    document.getElementById('billboard-body').innerHTML = '<div class="billboard-content">' + escapeHtml(content) + '</div>';
+  } catch(e) {
+    document.getElementById('billboard-body').innerHTML = '<div class="no-data">Could not load billboard.</div>';
+  }
+}
+
+// ─── Tunnels ───
+async function loadTunnels() {
+  try {
+    const res = await fetch(API + '/api/tunnels');
+    const data = await res.json();
+    if (data.error) return;
+
+    let html = '<strong>🌐 Tunnel URLs:</strong> ';
+    const entries = Object.entries(data).filter(([k]) => k !== 'lastUpdated');
+    if (entries.length === 0) {
+      html += '<em>No tunnels configured yet.</em>';
+    } else {
+      html += entries.map(([k, v]) => `<a href="${escapeHtml(v)}" target="_blank" style="color:var(--accent-green);">${escapeHtml(k)}</a>`).join(' · ');
+
+      // Update museum link
+      if (data.museum) {
+        document.getElementById('link-museum').href = data.museum;
+      }
+      if (data.quartet) {
+        document.getElementById('link-quartet').href = data.quartet;
+      }
+    }
+    document.getElementById('tunnel-links').innerHTML = html;
+  } catch(e) {
+    // Tunnels are optional
+  }
+}
+
+// ─── Grant (Ground Truth) ───
+async function loadGrant() {
+  try {
+    const res = await fetch(API + '/api/grant');
+    const d = await res.json();
+
+    if (d.error) {
+      document.getElementById('grant-recommendation').textContent = 'No probe data yet. Run: bash /terrarium/usage/probe-usage.sh';
+      return;
+    }
+
+    // Session gauge
+    const sPct = d.session_pct;
+    if (sPct !== null && sPct !== undefined) {
+      document.getElementById('grant-session-fill').style.width = Math.min(sPct, 100) + '%';
+      document.getElementById('grant-session-fill').className = 'gauge-bar-fill ' + gaugeColor(sPct);
+      document.getElementById('grant-session-pct').textContent = sPct + '% used';
+    }
+    if (d.session_reset) {
+      document.getElementById('grant-session-reset').textContent = 'Resets ' + d.session_reset;
+    }
+
+    // Weekly (all models)
+    const wPct = d.week_all_pct;
+    if (wPct !== null && wPct !== undefined) {
+      document.getElementById('grant-week-fill').style.width = Math.min(wPct, 100) + '%';
+      document.getElementById('grant-week-fill').className = 'gauge-bar-fill ' + gaugeColor(wPct);
+      document.getElementById('grant-week-pct').textContent = wPct + '% used';
+    }
+    if (d.week_all_reset) {
+      document.getElementById('grant-week-reset').textContent = 'Resets ' + d.week_all_reset;
+    }
+
+    // Weekly (Sonnet)
+    const snPct = d.week_sonnet_pct;
+    if (snPct !== null && snPct !== undefined) {
+      document.getElementById('grant-sonnet-fill').style.width = Math.min(snPct, 100) + '%';
+      document.getElementById('grant-sonnet-fill').className = 'gauge-bar-fill ' + gaugeColor(snPct);
+      document.getElementById('grant-sonnet-pct').textContent = snPct + '% used';
+    }
+    if (d.week_sonnet_reset) {
+      document.getElementById('grant-sonnet-reset').textContent = 'Resets ' + d.week_sonnet_reset;
+    }
+
+    // Timestamp
+    if (d.timestamp) {
+      document.getElementById('grant-updated').textContent = 'Probed ' + timeAgo(d.timestamp);
+    }
+
+    // Recommendation based on session usage
+    const maxPct = Math.max(sPct || 0, wPct || 0);
+    let rec = '';
+    if (maxPct < 30) {
+      rec = '🟢 Plenty of budget remaining. Full speed ahead.';
+    } else if (maxPct < 60) {
+      rec = '🟡 Moderate usage. Consider pacing creature ticks.';
+    } else if (maxPct < 80) {
+      rec = '🟠 Approaching budget ceiling. Reduce active creatures or increase rest cycles.';
+    } else {
+      rec = '🔴 Near limit! Hibernate non-essential creatures immediately.';
+    }
+    const grantRec = document.getElementById('grant-recommendation');
+    grantRec.textContent = rec;
+    grantRec.className = 'recommendation' + (maxPct >= 80 ? ' red' : maxPct >= 60 ? ' yellow' : '');
+
+    // Grant is ground truth — always overwrite the header LED
+    const dot = document.querySelector('#signal-indicator .signal-dot');
+    const color = maxPct >= 80 ? 'red' : maxPct >= 60 ? 'yellow' : 'green';
+    dot.className = 'signal-dot signal-' + color;
+    document.getElementById('signal-text').textContent =
+      color.charAt(0).toUpperCase() + color.slice(1) + ' — Session ' + (sPct || 0) + '% / Week ' + (wPct || 0) + '%';
+    grantOwnsHeader = true;
+
+  } catch(e) {
+    document.getElementById('grant-recommendation').textContent = 'Error loading grant data: ' + e.message;
+  }
+}
+
+function gaugeColor(pct) {
+  if (pct >= 80) return 'red';
+  if (pct >= 60) return 'yellow';
+  return 'green';
+}
+
+// Grant data is ground truth — when available, it owns the header LED.
+let grantOwnsHeader = false;
+
+// ─── Fetch All ───
+async function fetchAll() {
+  grantOwnsHeader = false;
+  await Promise.allSettled([
+    loadCreatures(),
+    loadGrant(),
+    loadSignals(),
+    loadTimeline(),
+    loadCron(),
+    loadBillboard(),
+    loadTunnels()
+  ]);
+}
+
+// Initial load + auto-refresh
+fetchAll();
+setInterval(fetchAll, 30000);
+</script>
+
+</body>
+</html>

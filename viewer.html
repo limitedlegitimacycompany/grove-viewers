@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👁️ viewer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👁️</text></svg>">
+<style>
+:root {
+  --bg-deep: #0a0e0a;
+  --bg-main: #111611;
+  --bg-card: #1a201a;
+  --bg-hover: #222a22;
+  --bg-msg-user: #1a2a1a;
+  --bg-msg-assistant: #0f1a1a;
+  --border: #2a352a;
+  --border-light: #354035;
+  --text-primary: #d4ddd4;
+  --text-secondary: #8a9a8a;
+  --text-dim: #5a6a5a;
+  --accent-green: #4a8;
+  --accent-bright: #6c6;
+  --accent-yellow: #ca4;
+  --accent-red: #c54;
+  --accent-blue: #48a;
+  --accent-purple: #84a;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Header ─── */
+.header {
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+  z-index: 100;
+}
+.header h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent-green);
+  white-space: nowrap;
+}
+.header h1 span { margin-right: 0.3rem; }
+
+/* ─── Mode Toggle ─── */
+.mode-toggle {
+  display: flex;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mode-btn {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-btn:hover { background: var(--bg-hover); }
+.mode-btn.active {
+  background: var(--accent-green);
+  color: var(--bg-deep);
+  font-weight: 600;
+}
+
+/* ─── Connection Status ─── */
+.conn-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+.conn-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.conn-dot.connected { background: var(--accent-green); box-shadow: 0 0 4px var(--accent-green); }
+.conn-dot.connecting { background: var(--accent-yellow); animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+/* ─── Creature Hotbar ─── */
+.hotbar {
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border);
+  padding: 0.4rem 1rem;
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.hotbar::-webkit-scrollbar { height: 4px; }
+.hotbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.hotbar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.hotbar-item:hover { border-color: var(--accent-green); background: var(--bg-hover); }
+.hotbar-item.active { border-color: var(--accent-green); background: rgba(68,170,136,0.15); }
+.hotbar-item.gardener { border-color: var(--border-light); }
+.hotbar-item.gardener.active { border-color: var(--accent-blue); background: rgba(68,136,170,0.15); }
+.hotbar-emoji { font-size: 1.1rem; }
+.hotbar-name { font-size: 0.78rem; color: var(--text-primary); font-weight: 500; }
+.hotbar-status {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+.hotbar-status.active { background: var(--accent-green); box-shadow: 0 0 4px var(--accent-green); }
+.hotbar-status.resting { background: var(--accent-yellow); }
+.hotbar-status.sleeping { background: var(--accent-purple); }
+
+/* ─── Browse Mode Layout ─── */
+.browse-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.chat-panel-header {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.chat-panel-header .emoji { font-size: 1.3rem; }
+.chat-panel-header .name { font-weight: 600; font-size: 0.95rem; }
+.chat-panel-header .meta { font-size: 0.75rem; color: var(--text-dim); margin-left: auto; }
+
+/* ─── Filter Bar ─── */
+.filter-bar {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-deep);
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.filter-btn {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.filter-btn:hover { background: var(--bg-hover); border-color: var(--accent-green); }
+.filter-btn.active { 
+  background: var(--accent-green); 
+  color: var(--bg-deep); 
+  border-color: var(--accent-green);
+  font-weight: 600;
+}
+.filter-btn.active:hover { opacity: 0.9; }
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem 1rem;
+}
+.chat-messages::-webkit-scrollbar { width: 6px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+/* ─── Feed Panel ─── */
+.feed-panel {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.feed-panel-header {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-main);
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+.feed-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+.feed-messages::-webkit-scrollbar { width: 6px; }
+.feed-messages::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+/* ─── Messages ─── */
+.msg {
+  margin-bottom: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  line-height: 1.5;
+  font-size: 0.85rem;
+  word-break: break-word;
+}
+.msg-user {
+  background: var(--bg-msg-user);
+  border-left: 3px solid var(--accent-green);
+}
+.msg-assistant {
+  background: var(--bg-msg-assistant);
+  border-left: 3px solid var(--accent-blue);
+}
+.msg-system {
+  background: var(--bg-deep);
+  border-left: 3px solid var(--text-dim);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+.msg-sender {
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin-bottom: 0.2rem;
+  color: var(--accent-green);
+}
+.msg-assistant .msg-sender { color: var(--accent-blue); }
+.msg-system .msg-sender { color: var(--text-dim); }
+.msg-content {
+  white-space: pre-wrap;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+.msg-content code {
+  background: var(--bg-deep);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+}
+.msg-content pre {
+  background: var(--bg-deep);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  overflow-x: auto;
+  margin: 0.4rem 0;
+  white-space: pre;
+  line-height: 1.4;
+}
+.msg-content pre code {
+  background: none;
+  padding: 0;
+}
+.msg-content strong, .msg-content b { color: var(--accent-bright); }
+.msg-content em, .msg-content i { color: var(--text-secondary); }
+.msg-content h1, .msg-content h2, .msg-content h3 {
+  color: var(--accent-green);
+  margin: 0.5rem 0 0.2rem;
+  font-size: 0.9rem;
+}
+.msg-content ul, .msg-content ol {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+}
+.msg-content li { margin-bottom: 0.15rem; }
+.msg-content blockquote {
+  border-left: 2px solid var(--border-light);
+  padding-left: 0.6rem;
+  color: var(--text-secondary);
+  margin: 0.3rem 0;
+}
+.msg-content a {
+  color: var(--accent-blue);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+.msg-time {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+}
+.msg.streaming .msg-content::after {
+  content: '▊';
+  animation: blink 0.8s step-end infinite;
+  color: var(--accent-green);
+  margin-left: 2px;
+}
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+/* ─── Received Messages (from other agents) ─── */
+.msg.received {
+  background: var(--bg-deep);
+  border-left: 3px solid var(--accent-yellow);
+}
+.msg.received .msg-sender { 
+  color: var(--accent-yellow); 
+}
+.msg.received .msg-content {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ─── Tool Calls ─── */
+.msg.tool-call {
+  background: var(--bg-deep);
+  border-left: 3px solid var(--text-dim);
+  opacity: 0.7;
+  font-size: 0.78rem;
+}
+.msg.tool-call .msg-sender {
+  color: var(--text-dim);
+}
+
+/* ─── Feed Messages ─── */
+.feed-msg {
+  margin-bottom: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  background: var(--bg-card);
+  font-size: 0.78rem;
+  border-left: 2px solid var(--border);
+}
+.feed-msg-route {
+  font-weight: 600;
+  font-size: 0.72rem;
+  color: var(--accent-yellow);
+  margin-bottom: 0.15rem;
+}
+.feed-msg-content {
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  max-height: 4em;
+  overflow: hidden;
+}
+.feed-msg-time {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  margin-top: 0.1rem;
+}
+
+/* ─── Live Mode ─── */
+.live-layout {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+}
+.live-layout.active { display: flex; flex-wrap: wrap; align-content: flex-start; }
+
+.live-panel {
+  flex: 1 1 calc(50% - 0.5rem);
+  min-width: 300px;
+  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  margin: 0.25rem;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-card);
+  transition: border-color 0.3s;
+}
+.live-panel.streaming {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 6px rgba(68,170,136,0.2);
+}
+.live-panel.idle {
+  opacity: 0.7;
+}
+.live-panel.resting {
+  border-color: var(--accent-yellow);
+  opacity: 0.8;
+}
+.live-panel-header {
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+.live-panel-header .emoji { font-size: 1rem; }
+.live-panel-header .name { font-weight: 600; font-size: 0.85rem; }
+.live-panel-header .session-info {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+/* ─── Typing Indicator ─── */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--accent-yellow);
+  margin-left: 0.5rem;
+}
+.typing-dots {
+  display: inline-block;
+  position: relative;
+  width: 12px;
+  height: 4px;
+}
+.typing-dots::before,
+.typing-dots::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+  animation: typing-bounce 1.4s infinite ease-in-out;
+}
+.typing-dots::before { left: 0; }
+.typing-dots::after { left: 6px; animation-delay: 0.2s; }
+@keyframes typing-bounce {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+.live-panel-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+.live-panel-messages::-webkit-scrollbar { width: 4px; }
+.live-panel-messages::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+/* ─── Empty States ─── */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 2rem;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1><span>🌿</span> Viewer</h1>
+  <div class="mode-toggle">
+    <button class="mode-btn active" data-mode="browse" onclick="switchMode('browse')">📋 Browse</button>
+    <button class="mode-btn" data-mode="live" onclick="switchMode('live')">⚡ Live</button>
+  </div>
+  <a href="/" style="font-size:0.8rem; color:var(--accent-green); text-decoration:none;">← Dashboard</a>
+  <div class="conn-status">
+    <div class="conn-dot" id="conn-dot"></div>
+    <span id="conn-text">Connecting...</span>
+  </div>
+</div>
+
+<!-- Hotbar (both modes) -->
+<div class="hotbar" id="hotbar">
+  <div style="color:var(--text-dim); font-size:0.8rem; padding:0.3rem;">Loading creatures...</div>
+</div>
+
+<!-- Browse Mode -->
+<div class="browse-layout" id="browse-layout">
+  <div class="chat-panel" id="chat-panel">
+    <div class="chat-panel-header" id="chat-header">
+      <span class="emoji">🌱</span>
+      <span class="name">Select a creature</span>
+    </div>
+    <div class="filter-bar" id="filter-bar" style="display: none;">
+      <button class="filter-btn active" data-filter="systemMessages" onclick="toggleFilter('systemMessages')">
+        ⚙ System
+      </button>
+      <button class="filter-btn" data-filter="toolCalls" onclick="toggleFilter('toolCalls')">
+        ⚡ Tools
+      </button>
+      <button class="filter-btn active" data-filter="crossAgentChats" onclick="toggleFilter('crossAgentChats')">
+        💬 Cross-Agent
+      </button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="empty-state">Click a creature or gardener in the hotbar above to view their session.</div>
+    </div>
+  </div>
+  <div class="feed-panel" id="feed-panel">
+    <div class="feed-panel-header">📡 Inter-Agent Messages</div>
+    <div class="feed-messages" id="feed-messages">
+      <div class="empty-state" style="font-size:0.8rem;">Cross-agent messages will appear here as they happen.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Live Mode -->
+<div class="live-layout" id="live-layout">
+  <div class="empty-state" id="live-empty">No active sessions. Creatures will appear here when they're working.</div>
+</div>
+
+<script>
+const GATEWAY_URL = 'ws://localhost:18789/';
+const GATEWAY_TOKEN = '775969809e41d4bd735bf3bb4839acd1b7be21a406411780';
+const DASHBOARD_API = '';
+
+let ws = null;
+let connected = false;
+let authenticated = false;
+let reqCounter = 0;
+let currentMode = 'browse';
+let selectedEntity = null; // { name, emoji, sessionKey, type }
+
+// ─── Entity registry: creatures + gardeners ───
+const entities = {};
+// { name: { emoji, sessionKey, type: 'creature'|'gardener', status, lastActive } }
+
+const GARDENERS = {
+  moss: { emoji: '🌱', sessionKey: 'agent:main:slack:channel:c0ac6trepe2', altKeys: ['main', 'agent:main:main'], type: 'gardener' },
+  wren: { emoji: '🪶', sessionKey: 'agent:wren:main', altKeys: ['wren', 'agent:wren:slack:channel:c0ac6trepe2'], type: 'gardener' },
+  kit:  { emoji: '🧶', sessionKey: 'agent:kit:main', altKeys: ['kit', 'agent:kit:slack:channel:c0ac6trepe2'], type: 'gardener' },
+  sol:  { emoji: '☀️', sessionKey: 'agent:sol:main', altKeys: ['sol', 'agent:sol:slack:channel:c0ac6trepe2'], type: 'gardener' },
+};
+
+// Creatures are loaded dynamically from the API in loadEntities()
+
+// Message history per entity
+const messageHistory = {}; // name -> [{ role, content, timestamp, sender }]
+const feedMessages = []; // inter-agent messages
+
+// Streaming state per entity (populated dynamically in loadEntities)
+const entityState = {};
+
+// Ensure entityState exists for a given entity (call before accessing)
+function ensureEntityState(name) {
+  if (!entityState[name]) {
+    entityState[name] = { runs: {}, streaming: false };
+  }
+  return entityState[name];
+}
+
+// Session key → entity name mapping
+const sessionToEntity = {};
+
+// Message filters
+const messageFilters = {
+  systemMessages: true,
+  toolCalls: false, // hidden by default
+  crossAgentChats: true
+};
+
+// ─── Populate Hotbar ───
+async function loadEntities() {
+  // Add gardeners first
+  for (const [name, cfg] of Object.entries(GARDENERS)) {
+    entities[name] = { ...cfg, status: 'active', lastActive: Date.now() };
+    sessionToEntity[cfg.sessionKey] = name;
+    for (const alt of cfg.altKeys) sessionToEntity[alt] = name;
+    ensureEntityState(name);
+  }
+
+  // Fetch real creatures from the dashboard API
+  try {
+    const res = await fetch(DASHBOARD_API + '/api/creatures');
+    const data = await res.json();
+    const creatures = data.creatures || {};
+
+    for (const [name, c] of Object.entries(creatures)) {
+      entities[name] = {
+        emoji: c.emoji || '🌿',
+        sessionKey: c.sessionKey || `agent:${name}:main`,
+        altKeys: [name],
+        type: 'creature',
+        status: c.status || 'active',
+        lastActive: Date.now(),
+      };
+      const sKey = entities[name].sessionKey;
+      if (sKey) sessionToEntity[sKey] = name;
+      sessionToEntity[name] = name;
+      ensureEntityState(name);
+    }
+  } catch (e) {
+    console.warn('Could not load creatures from API:', e);
+  }
+
+  renderHotbar();
+}
+
+function renderHotbar() {
+  const bar = document.getElementById('hotbar');
+  let html = '';
+
+  // Gardeners first
+  for (const [name, e] of Object.entries(entities)) {
+    if (e.type !== 'gardener') continue;
+    const activeClass = selectedEntity && selectedEntity.name === name ? ' active' : '';
+    html += `<div class="hotbar-item gardener${activeClass}" onclick="selectEntity('${name}')">
+      <span class="hotbar-emoji">${e.emoji}</span>
+      <span class="hotbar-name">${name}</span>
+      <span class="hotbar-status active"></span>
+    </div>`;
+  }
+
+  // Separator
+  if (Object.values(entities).some(e => e.type === 'creature')) {
+    html += `<div style="border-left:1px solid var(--border);margin:0 0.3rem;"></div>`;
+  }
+
+  // Creatures
+  for (const [name, e] of Object.entries(entities)) {
+    if (e.type !== 'creature') continue;
+    const activeClass = selectedEntity && selectedEntity.name === name ? ' active' : '';
+    const statusClass = e.status || 'active';
+    html += `<div class="hotbar-item${activeClass}" onclick="selectEntity('${name}')">
+      <span class="hotbar-emoji">${e.emoji}</span>
+      <span class="hotbar-name">${name}</span>
+      <span class="hotbar-status ${statusClass}"></span>
+    </div>`;
+  }
+
+  if (!html) {
+    html = '<div style="color:var(--text-dim);font-size:0.8rem;padding:0.3rem;">No creatures hatched yet. Gardeners are standing by.</div>';
+  }
+
+  bar.innerHTML = html;
+}
+
+// ─── Entity Selection ───
+function selectEntity(name) {
+  const e = entities[name];
+  if (!e) return;
+
+  selectedEntity = { name, ...e };
+  renderHotbar();
+
+  // Update chat panel header
+  const hdr = document.getElementById('chat-header');
+  hdr.innerHTML = `
+    <span class="emoji">${e.emoji}</span>
+    <span class="name">${name}</span>
+    <span style="font-size:0.7rem;color:var(--text-dim);margin-left:0.5rem;">${e.type}</span>
+    <span class="meta">${e.sessionKey || 'no session'}</span>
+  `;
+
+  // Show filter bar
+  const filterBar = document.getElementById('filter-bar');
+  filterBar.style.display = 'flex';
+  updateFilterButtons();
+
+  // Fetch history if we have a session key and are connected
+  if (e.sessionKey && authenticated) {
+    fetchHistory(name, e.sessionKey);
+  } else {
+    renderChatMessages(name);
+  }
+}
+
+// ─── Message Filters ───
+function toggleFilter(filterName) {
+  messageFilters[filterName] = !messageFilters[filterName];
+  updateFilterButtons();
+  
+  // Re-render messages if an entity is selected
+  if (selectedEntity) {
+    renderChatMessages(selectedEntity.name);
+  }
+
+  // Re-render feed (for cross-agent chat filter)
+  renderFeed();
+}
+
+function updateFilterButtons() {
+  const buttons = document.querySelectorAll('.filter-btn');
+  buttons.forEach(btn => {
+    const filter = btn.dataset.filter;
+    btn.classList.toggle('active', messageFilters[filter]);
+  });
+}
+
+// ─── WebSocket Connection ───
+function setConnStatus(state) {
+  const dot = document.getElementById('conn-dot');
+  const text = document.getElementById('conn-text');
+  dot.className = 'conn-dot ' + state;
+  if (state === 'connected') text.textContent = 'Connected';
+  else if (state === 'connecting') text.textContent = 'Connecting...';
+  else text.textContent = 'Disconnected';
+}
+
+function connectGateway() {
+  if (ws) { try { ws.close(); } catch(e) {} }
+  setConnStatus('connecting');
+
+  // Determine WS URL — if page loaded over HTTPS, we can't connect to ws://localhost
+  // In that case, use the server's WebSocket proxy
+  let wsUrl = GATEWAY_URL;
+  if (location.protocol === 'https:') {
+    // Use proxy through our server
+    wsUrl = `wss://${location.host}/ws-proxy`;
+  }
+
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    console.log('WS opened, waiting for challenge...');
+  };
+
+  let gotChallenge = false;
+
+  ws.onmessage = (event) => {
+    let data;
+    try { data = JSON.parse(event.data); } catch(e) { return; }
+
+    // Step 1: receive challenge
+    if (!gotChallenge && data.type === 'event' && data.event === 'connect.challenge') {
+      gotChallenge = true;
+      console.log('Got challenge, sending auth...');
+      ws.send(JSON.stringify({
+        type: 'req',
+        id: 'auth-' + (++reqCounter),
+        method: 'connect',
+        params: {
+          minProtocol: 3,
+          maxProtocol: 3,
+          client: {
+            id: 'webchat',
+            version: 'terrarium-viewer',
+            platform: navigator.platform || 'web',
+            mode: 'webchat',
+          },
+          auth: { token: GATEWAY_TOKEN }
+        }
+      }));
+      return;
+    }
+
+    // Step 2: auth response
+    if (!authenticated && data.type === 'res' && data.id && data.id.startsWith('auth-')) {
+      if (data.ok) {
+        authenticated = true;
+        connected = true;
+        setConnStatus('connected');
+        console.log('Authenticated! Fetching histories...');
+        fetchAllHistories();
+      } else {
+        console.error('Auth failed:', data.error);
+        setConnStatus('disconnected');
+      }
+      return;
+    }
+
+    if (!authenticated) return;
+
+    // Handle events
+    if (data.type === 'event') {
+      handleEvent(data);
+    }
+    // Handle responses (for history, send, etc.)
+    else if (data.type === 'res') {
+      handleResponse(data);
+    }
+  };
+
+  ws.onclose = () => {
+    connected = false;
+    authenticated = false;
+    setConnStatus('disconnected');
+    console.log('WS closed, reconnecting in 3s...');
+    setTimeout(connectGateway, 3000);
+  };
+
+  ws.onerror = (e) => {
+    console.error('WS error:', e);
+  };
+}
+
+// ─── History ───
+const pendingHistoryReqs = {}; // reqId -> entityName
+
+function fetchAllHistories() {
+  for (const [name, cfg] of Object.entries(entities)) {
+    if (!cfg.sessionKey) continue;
+    const reqId = 'hist-' + name + '-' + (++reqCounter);
+    pendingHistoryReqs[reqId] = name;
+    ws.send(JSON.stringify({
+      type: 'req',
+      id: reqId,
+      method: 'chat.history',
+      params: {
+        sessionKey: cfg.sessionKey,
+        limit: 30,
+      }
+    }));
+  }
+}
+
+function fetchHistory(name, sessionKey) {
+  if (!ws || !authenticated || !sessionKey) return;
+  const reqId = 'hist-' + name + '-' + (++reqCounter);
+  pendingHistoryReqs[reqId] = name;
+  ws.send(JSON.stringify({
+    type: 'req',
+    id: reqId,
+    method: 'chat.history',
+    params: { sessionKey, limit: 50 }
+  }));
+}
+
+function handleResponse(data) {
+  const reqId = data.id;
+
+  // History response
+  if (reqId && pendingHistoryReqs[reqId]) {
+    const entityName = pendingHistoryReqs[reqId];
+    delete pendingHistoryReqs[reqId];
+
+    if (data.ok && data.payload) {
+      const messages = data.payload.messages || data.payload || [];
+      if (Array.isArray(messages)) {
+        renderHistory(entityName, messages);
+      }
+    } else {
+      // Try alt key
+      const cfg = entities[entityName];
+      if (cfg && cfg.altKeys && cfg.altKeys.length > 0 && !reqId.includes('alt')) {
+        const altReqId = 'hist-' + entityName + '-alt-' + (++reqCounter);
+        pendingHistoryReqs[altReqId] = entityName;
+        ws.send(JSON.stringify({
+          type: 'req',
+          id: altReqId,
+          method: 'chat.history',
+          params: {
+            sessionKey: cfg.altKeys[0],
+            limit: 30,
+          }
+        }));
+        console.log(`Primary key failed for ${entityName}, trying alt: ${cfg.altKeys[0]}`);
+      } else {
+        console.warn(`History failed for ${entityName}:`, data.error);
+      }
+    }
+    return;
+  }
+}
+
+function renderHistory(entityName, messages) {
+  const isSelected = selectedEntity && selectedEntity.name === entityName;
+  
+  // Don't refresh if there's an active stream — it would clobber it
+  const es = entityState[entityName];
+  if (es && Object.keys(es.runs).length > 0) return;
+  
+  // Store in messageHistory
+  messageHistory[entityName] = messages.map(m => ({
+    role: m.role || 'unknown',
+    content: extractText(m),
+    timestamp: m.timestamp || null,
+  })).filter(m => m.content);
+
+  // Update display if this entity is currently selected
+  if (isSelected) {
+    renderChatMessages(entityName);
+  }
+}
+
+// ─── Events ───
+function handleEvent(data) {
+  const event = data.event;
+  const payload = data.payload || {};
+
+  if (event === 'chat') {
+    handleChatEvent(payload);
+  } else if (event === 'agent') {
+    handleAgentEvent(payload);
+  }
+}
+
+function resolveEntity(sessionKey) {
+  // Direct match
+  if (sessionToEntity[sessionKey]) return sessionToEntity[sessionKey];
+  // Partial match — check if sessionKey contains entity name
+  const lower = (sessionKey || '').toLowerCase();
+  for (const name of Object.keys(entities)) {
+    if (lower.includes(name)) return name;
+  }
+  // Default to moss for "main"
+  if (lower === 'main') return 'moss';
+  return null;
+}
+
+function handleChatEvent(payload) {
+  const sessionKey = payload.sessionKey || '';
+  const entityName = resolveEntity(sessionKey);
+  if (!entityName) {
+    console.log('Unknown session:', sessionKey);
+    return;
+  }
+
+  const state = payload.state;
+  const runId = payload.runId;
+  const message = payload.message || {};
+  const role = message.role || 'assistant';
+  const fullText = extractText(message);
+
+  if (role === 'user') {
+    // User message — just display it
+    if (state === 'final' || state === 'delta') {
+      if (!messageHistory[entityName]) messageHistory[entityName] = [];
+      messageHistory[entityName].push({ role, content: fullText, timestamp: new Date().toISOString() });
+      
+      if (selectedEntity && selectedEntity.name === entityName && currentMode === 'browse') {
+        appendChatMessage(role, fullText, false);
+      }
+      updateLivePanel(entityName, fullText, false, role);
+      
+      // Check for cross-agent messages
+      checkForCrossAgentMessage(entityName, fullText);
+    }
+    return;
+  }
+
+  // Assistant messages — handle streaming
+  const es = ensureEntityState(entityName);
+
+  if (state === 'delta') {
+    if (!runId) return;
+    if (!es.runs[runId]) {
+      es.runs[runId] = { buffer: '', el: null };
+    }
+    const run = es.runs[runId];
+    const prevLen = run.buffer.length;
+
+    if (fullText.length > prevLen) {
+      run.buffer = fullText;
+      if (selectedEntity && selectedEntity.name === entityName && currentMode === 'browse') {
+        if (!run.el) {
+          run.el = appendChatMessage('assistant', fullText, true);
+        } else {
+          updateStreamingMessage(run.el, fullText);
+        }
+        scrollChat();
+      }
+      updateLivePanel(entityName, fullText, true);
+      setEntityStatus(entityName, 'streaming');
+    }
+  }
+  else if (state === 'final') {
+    if (runId && es.runs[runId]) {
+      const run = es.runs[runId];
+      if (fullText) run.buffer = fullText;
+      
+      if (!messageHistory[entityName]) messageHistory[entityName] = [];
+      messageHistory[entityName].push({ role, content: run.buffer, timestamp: new Date().toISOString() });
+      
+      if (run.el) {
+        finalizeStreamingMessage(run.el, run.buffer);
+      } else if (run.buffer && selectedEntity && selectedEntity.name === entityName && currentMode === 'browse') {
+        appendChatMessage('assistant', run.buffer, false);
+      }
+      delete es.runs[runId];
+    } else if (fullText) {
+      if (!messageHistory[entityName]) messageHistory[entityName] = [];
+      messageHistory[entityName].push({ role, content: fullText, timestamp: new Date().toISOString() });
+      if (selectedEntity && selectedEntity.name === entityName && currentMode === 'browse') {
+        appendChatMessage('assistant', fullText, false);
+      }
+    }
+    updateLivePanel(entityName, fullText || (runId && es.runs[runId] ? es.runs[runId].buffer : ''), false);
+    // Check if any other runs still active
+    if (Object.keys(es.runs).length === 0) {
+      setEntityStatus(entityName, 'idle');
+    }
+  }
+  else if (state === 'aborted' || state === 'error') {
+    if (runId && es.runs[runId]) {
+      const run = es.runs[runId];
+      if (run.el) {
+        finalizeStreamingMessage(run.el, run.buffer || '[aborted]');
+      }
+      delete es.runs[runId];
+    }
+    if (Object.keys(es.runs).length === 0) {
+      setEntityStatus(entityName, 'idle');
+    }
+  }
+}
+
+function handleAgentEvent(payload) {
+  const sessionKey = payload.sessionKey || '';
+  const entityName = resolveEntity(sessionKey);
+  if (!entityName) return;
+
+  const type = payload.type;
+  if (type === 'tool_use') {
+    const toolName = payload.name || 'tool';
+    setEntityStatus(entityName, 'tool', toolName);
+    
+    // Always store tool calls in history
+    if (!messageHistory[entityName]) messageHistory[entityName] = [];
+    messageHistory[entityName].push({ role: 'tool', content: toolName, timestamp: new Date().toISOString() });
+
+    // Display if entity is selected (filtering handled inside appendChatMessage)
+    if (selectedEntity && selectedEntity.name === entityName && currentMode === 'browse') {
+      appendChatMessage('tool', toolName, false);
+      scrollChat();
+    }
+  }
+}
+
+function checkForCrossAgentMessage(entityName, content) {
+  // Always detect and store — filtering happens at render time in renderFeed()
+  if (!content) return;
+  const lower = content.toLowerCase();
+  
+  for (const [name, e] of Object.entries(entities)) {
+    if (name === entityName) continue;
+    const nameLower = name.toLowerCase();
+    // Check various patterns that indicate cross-agent communication
+    if (lower.includes(`hey ${nameLower}`) || lower.includes(`hi ${nameLower}`) ||
+        lower.includes(`it's ${nameLower}`) || lower.includes(`dear ${nameLower}`) ||
+        lower.includes(`— ${nameLower}`) || lower.includes(`- ${nameLower}`) ||
+        lower.startsWith(`[${nameLower}]`) || lower.startsWith(`${nameLower}:`) ||
+        lower.includes(`from ${nameLower}`) || lower.includes(`to ${nameLower}`) ||
+        lower.includes(`@${nameLower}`) ||
+        content.includes(e.emoji)) {
+      feedMessages.push({
+        from: entityName,
+        fromEmoji: entities[entityName]?.emoji || '?',
+        to: name,
+        toEmoji: e.emoji,
+        content: content.substring(0, 300),
+        timestamp: new Date().toISOString(),
+      });
+      renderFeed();
+      break;
+    }
+  }
+}
+
+// ─── Text Extraction ───
+function extractText(msg) {
+  if (!msg) return '';
+  const content = msg.content;
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content.map(b => {
+      if (typeof b === 'string') return b;
+      if (b && b.type === 'text' && b.text) return b.text;
+      return '';
+    }).join('\n');
+  }
+  if (msg.text) return msg.text;
+  return '';
+}
+
+// ─── Rendering: Chat Panel ───
+function renderChatMessages(name) {
+  const container = document.getElementById('chat-messages');
+  const msgs = messageHistory[name] || [];
+
+  if (msgs.length === 0) {
+    container.innerHTML = '<div class="empty-state">No messages yet for this session.</div>';
+    return;
+  }
+
+  // Don't refresh if there's an active stream — it would clobber it
+  const es = entityState[name];
+  if (es && Object.keys(es.runs).length > 0) return;
+
+  container.innerHTML = '';
+  for (const m of msgs) {
+    appendChatMessage(m.role, m.content, false, container);
+  }
+  scrollChat();
+}
+
+function appendChatMessage(role, content, streaming = false, container = null) {
+  container = container || document.getElementById('chat-messages');
+
+  // Check filters
+  if (role === 'system' && !messageFilters.systemMessages) return null;
+  if (role === 'tool' && !messageFilters.toolCalls) return null;
+
+  // Filter cross-agent messages (user messages identified as from another entity)
+  if (role === 'user' && !messageFilters.crossAgentChats) {
+    if (identifySender(content)) return null;
+  }
+
+  // Remove empty state
+  const empty = container.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const div = document.createElement('div');
+  div.className = `msg msg-${role}${streaming ? ' streaming' : ''}`;
+
+  // Determine sender label with emoji + name
+  let senderLabel;
+  let senderOverride = null;
+  
+  if (role === 'assistant' && selectedEntity) {
+    senderLabel = `${selectedEntity.emoji} ${selectedEntity.name}`;
+  } else if (role === 'user') {
+    // Try to identify who sent this (gardener prompt, another creature, etc.)
+    senderOverride = identifySender(content);
+    if (senderOverride) {
+      senderLabel = senderOverride;
+      // Style as received message
+      div.classList.add('received');
+    } else {
+      senderLabel = '↗ input';
+    }
+  } else if (role === 'tool') {
+    senderLabel = '⚡ tool';
+    div.classList.add('tool-call');
+  } else if (role === 'system') {
+    senderLabel = '⚙ system';
+  } else {
+    senderLabel = role;
+  }
+
+  div.innerHTML = `
+    <div class="msg-sender">${senderLabel}</div>
+    <div class="msg-content">${streaming ? escapeHtml(content) : renderMarkdown(content)}</div>
+  `;
+
+  container.appendChild(div);
+  
+  // Trim old messages (keep last 100)
+  while (container.children.length > 100) {
+    container.removeChild(container.firstChild);
+  }
+
+  if (!streaming) scrollChat();
+  return div;
+}
+
+function identifySender(content) {
+  if (!content) return null;
+  const lower = content.toLowerCase();
+  for (const [name, e] of Object.entries(entities)) {
+    if (selectedEntity && name === selectedEntity.name) continue;
+    // Check if this message was sent by another entity
+    if (lower.startsWith(`[${name}]`) || lower.startsWith(`${name}:`) ||
+        lower.includes(`from ${name}`) || lower.includes(`— ${name}`)) {
+      return `${e.emoji} ${name} →`;
+    }
+  }
+  // Check for gardener/system patterns
+  if (lower.includes('gardener tick') || lower.includes('gardener:')) return '🌿 gardener';
+  if (lower.includes('billboard') || lower.includes('recxa')) return '📋 environment';
+  return null;
+}
+
+function updateStreamingMessage(el, text) {
+  if (!el) return;
+  const textSpan = el.querySelector('.msg-content');
+  if (textSpan) textSpan.textContent = text;
+}
+
+function finalizeStreamingMessage(el, text) {
+  if (!el) return;
+  el.classList.remove('streaming');
+  const textSpan = el.querySelector('.msg-content');
+  if (textSpan) {
+    textSpan.innerHTML = renderMarkdown(text);
+  }
+}
+
+function appendToolCall(entityName, toolName) {
+  if (!messageFilters.toolCalls) return; // Respect filter
+  
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+  
+  const div = document.createElement('div');
+  div.className = 'msg msg-system tool-call';
+  div.innerHTML = `
+    <div class="msg-sender">⚡ tool</div>
+    <div class="msg-content">${escapeHtml(toolName)}</div>
+  `;
+  container.appendChild(div);
+  
+  // Trim old messages (keep last 100)
+  while (container.children.length > 100) {
+    container.removeChild(container.firstChild);
+  }
+}
+
+function setEntityStatus(entityName, status, detail) {
+  // Update entity state
+  if (entities[entityName]) {
+    entities[entityName].lastActive = Date.now();
+    entities[entityName].status = status;
+  }
+  
+  // Update hotbar visual if needed
+  renderHotbar();
+  
+  // Update live panel status if in live mode
+  if (currentMode === 'live') {
+    updateLivePanelStatus(entityName);
+  }
+}
+
+function scrollChat() {
+  const container = document.getElementById('chat-messages');
+  requestAnimationFrame(() => {
+    container.scrollTop = container.scrollHeight;
+  });
+}
+
+// ─── Rendering: Feed ───
+function renderFeed() {
+  const container = document.getElementById('feed-messages');
+  if (!container) return;
+
+  // Respect cross-agent chat filter
+  if (!messageFilters.crossAgentChats) {
+    container.innerHTML = '<div class="empty-state" style="font-size:0.8rem;">Cross-agent chats hidden by filter.</div>';
+    return;
+  }
+
+  const recent = feedMessages.slice(-50).reverse();
+
+  if (recent.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="font-size:0.8rem;">Cross-agent messages will appear here as they happen.</div>';
+    return;
+  }
+
+  let html = '';
+  for (const m of recent) {
+    html += `<div class="feed-msg">
+      <div class="feed-msg-route">${m.fromEmoji} ${m.from} → ${m.toEmoji} ${m.to}</div>
+      <div class="feed-msg-content">${escapeHtml(m.content)}</div>
+      <div class="feed-msg-time">${timeAgo(m.timestamp)}</div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+// ─── Live Mode ───
+function updateLivePanel(entityName, text, streaming, role = 'assistant') {
+  if (currentMode !== 'live') return;
+
+  const e = entities[entityName];
+  if (!e) return;
+
+  let panel = document.getElementById('live-' + entityName);
+  if (!panel) {
+    // Create panel
+    const liveLayout = document.getElementById('live-layout');
+    const emptyEl = document.getElementById('live-empty');
+    if (emptyEl) emptyEl.remove();
+
+    panel = document.createElement('div');
+    panel.className = 'live-panel';
+    panel.id = 'live-' + entityName;
+    panel.innerHTML = `
+      <div class="live-panel-header">
+        <span class="emoji">${e.emoji}</span>
+        <span class="name">${entityName}</span>
+        <span class="session-info">${e.type}</span>
+        <div class="typing-indicator" id="typing-${entityName}" style="display: none;">
+          <span class="typing-dots"></span> typing...
+        </div>
+      </div>
+      <div class="live-panel-messages" id="live-msgs-${entityName}"></div>
+    `;
+    liveLayout.appendChild(panel);
+  }
+
+  // Update typing indicator
+  const typingIndicator = document.getElementById('typing-' + entityName);
+  if (typingIndicator) {
+    typingIndicator.style.display = streaming ? 'flex' : 'none';
+  }
+
+  // Add/update message
+  const msgContainer = document.getElementById('live-msgs-' + entityName);
+  const lastMsg = msgContainer.lastElementChild;
+
+  if (streaming && lastMsg && lastMsg.classList.contains('streaming')) {
+    lastMsg.querySelector('.msg-content').textContent = text;
+  } else {
+    const div = document.createElement('div');
+    div.className = `msg msg-${role}${streaming ? ' streaming' : ''}`;
+    div.innerHTML = `<div class="msg-content">${streaming ? escapeHtml(text) : renderMarkdown(text)}</div>`;
+    msgContainer.appendChild(div);
+
+    // Keep only last 20 messages per panel
+    while (msgContainer.children.length > 20) {
+      msgContainer.removeChild(msgContainer.firstChild);
+    }
+  }
+  msgContainer.scrollTop = msgContainer.scrollHeight;
+
+  // Mark entity as recently active (for cleanup)
+  e.lastActive = Date.now();
+
+  // Update panel visual state
+  panel.classList.remove('streaming', 'idle', 'resting');
+  if (streaming) {
+    panel.classList.add('streaming');
+  } else if (e.status === 'resting' || e.status === 'sleeping') {
+    panel.classList.add('resting');
+  }
+}
+
+// Periodically clean up inactive live panels (2 min timeout)
+setInterval(() => {
+  if (currentMode !== 'live') return;
+  const now = Date.now();
+  for (const [name, e] of Object.entries(entities)) {
+    if (now - (e.lastActive || 0) > 120000) {
+      const panel = document.getElementById('live-' + name);
+      if (panel) panel.remove();
+    }
+  }
+  // Show empty state if no panels
+  const liveLayout = document.getElementById('live-layout');
+  if (liveLayout.children.length === 0 || (liveLayout.children.length === 1 && liveLayout.children[0].id === 'live-empty')) {
+    if (!document.getElementById('live-empty')) {
+      liveLayout.innerHTML = '<div class="empty-state" id="live-empty">No active sessions. Creatures will appear here when they\'re working.</div>';
+    }
+  }
+}, 15000);
+
+// ─── Mode Switching ───
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+
+  document.getElementById('browse-layout').style.display = mode === 'browse' ? 'flex' : 'none';
+  const liveLayout = document.getElementById('live-layout');
+  liveLayout.classList.toggle('active', mode === 'live');
+  if (mode !== 'live') liveLayout.style.display = 'none';
+  else {
+    liveLayout.style.display = 'flex';
+    buildLivePanels();
+  }
+}
+
+// Build live panels for all known entities
+function buildLivePanels() {
+  const liveLayout = document.getElementById('live-layout');
+
+  // Determine which entities have recent activity or are currently streaming
+  const now = Date.now();
+  const activeNames = [];
+  const idleNames = [];
+
+  for (const [name, e] of Object.entries(entities)) {
+    const es = entityState[name];
+    const isStreaming = es && Object.keys(es.runs).length > 0;
+    const hasHistory = messageHistory[name] && messageHistory[name].length > 0;
+    const recentlyActive = (now - (e.lastActive || 0)) < 300000; // 5 min
+
+    if (isStreaming) {
+      activeNames.push(name);
+    } else if (hasHistory || recentlyActive) {
+      activeNames.push(name);
+    } else {
+      idleNames.push(name);
+    }
+  }
+
+  // Build panels for active entities (streaming first, then recently active)
+  const allToShow = [...activeNames, ...idleNames];
+
+  if (allToShow.length === 0) {
+    if (!document.getElementById('live-empty')) {
+      liveLayout.innerHTML = '<div class="empty-state" id="live-empty">No active sessions. Creatures will appear here when they\'re working.</div>';
+    }
+    return;
+  }
+
+  // Remove empty state
+  const emptyEl = document.getElementById('live-empty');
+  if (emptyEl) emptyEl.remove();
+
+  for (const name of allToShow) {
+    const e = entities[name];
+    if (!e) continue;
+
+    let panel = document.getElementById('live-' + name);
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'live-panel';
+      panel.id = 'live-' + name;
+
+      const es = entityState[name];
+      const isStreaming = es && Object.keys(es.runs).length > 0;
+
+      panel.innerHTML = `
+        <div class="live-panel-header">
+          <span class="emoji">${e.emoji}</span>
+          <span class="name">${name}</span>
+          <span class="session-info">${e.type}${e.status === 'resting' ? ' · 💤 resting' : e.status === 'sleeping' ? ' · 😴 sleeping' : ''}</span>
+          <div class="typing-indicator" id="typing-${name}" style="display: ${isStreaming ? 'flex' : 'none'};">
+            <span class="typing-dots"></span> typing...
+          </div>
+        </div>
+        <div class="live-panel-messages" id="live-msgs-${name}"></div>
+      `;
+      liveLayout.appendChild(panel);
+
+      // Populate with recent message history
+      const msgs = messageHistory[name] || [];
+      const recent = msgs.slice(-10); // last 10 messages
+      const msgContainer = panel.querySelector('.live-panel-messages');
+
+      if (recent.length === 0) {
+        msgContainer.innerHTML = '<div class="empty-state" style="font-size:0.75rem;padding:0.5rem;">No recent activity</div>';
+      } else {
+        for (const m of recent) {
+          const div = document.createElement('div');
+          div.className = `msg msg-${m.role}`;
+          div.innerHTML = `<div class="msg-content">${renderMarkdown(m.content)}</div>`;
+          msgContainer.appendChild(div);
+        }
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+      }
+    }
+
+    // Update status visual on existing panels
+    updateLivePanelStatus(name);
+  }
+}
+
+// Update the status indicator on a live panel header
+function updateLivePanelStatus(name) {
+  const e = entities[name];
+  if (!e) return;
+  const panel = document.getElementById('live-' + name);
+  if (!panel) return;
+
+  const sessionInfo = panel.querySelector('.session-info');
+  if (sessionInfo) {
+    let statusText = e.type;
+    if (e.status === 'streaming') statusText += ' · ⚡ streaming';
+    else if (e.status === 'tool') statusText += ' · 🔧 tool';
+    else if (e.status === 'resting') statusText += ' · 💤 resting';
+    else if (e.status === 'sleeping') statusText += ' · 😴 sleeping';
+    else if (e.status === 'idle') statusText += ' · idle';
+    sessionInfo.textContent = statusText;
+  }
+}
+
+// ─── Utils ───
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const secs = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  if (secs < 60) return secs + 's ago';
+  if (secs < 3600) return Math.floor(secs/60) + 'm ago';
+  return Math.floor(secs/3600) + 'h ago';
+}
+
+// ─── Lightweight Markdown → HTML ───
+function renderMarkdown(text) {
+  if (!text) return '';
+  let html = escapeHtml(text);
+
+  // Code blocks (``` ... ```)
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    return `<pre><code>${code.trim()}</code></pre>`;
+  });
+
+  // Inline code
+  html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Italic
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Headers (##, ###)
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // Blockquotes
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // Unordered lists
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
+
+  // Links [text](url)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+  return html;
+}
+
+// ─── Periodic creature refresh ───
+setInterval(async () => {
+  try {
+    const res = await fetch(DASHBOARD_API + '/api/creatures');
+    const data = await res.json();
+    const creatures = data.creatures || {};
+
+    let needsHotbarUpdate = false;
+    for (const [name, c] of Object.entries(creatures)) {
+      if (!entities[name]) {
+        entities[name] = {
+          emoji: c.emoji || '🌿',
+          sessionKey: c.sessionKey || `agent:${name}:main`,
+          altKeys: [name],
+          type: 'creature',
+          status: c.status || 'active',
+          lastActive: Date.now(),
+        };
+        const sKey = entities[name].sessionKey;
+        if (sKey) sessionToEntity[sKey] = name;
+        sessionToEntity[name] = name;
+        ensureEntityState(name);
+        needsHotbarUpdate = true;
+      } else {
+        // Update status and emoji from API
+        entities[name].status = c.status || entities[name].status;
+        if (c.emoji) entities[name].emoji = c.emoji;
+        if (c.sessionKey && !entities[name].sessionKey) {
+          entities[name].sessionKey = c.sessionKey;
+          sessionToEntity[c.sessionKey] = name;
+        }
+      }
+    }
+    if (needsHotbarUpdate) renderHotbar();
+  } catch (e) {}
+}, 10000);
+
+// ─── Init ───
+loadEntities().then(() => {
+  connectGateway();
+});
+</script>
+</body>
+</html>

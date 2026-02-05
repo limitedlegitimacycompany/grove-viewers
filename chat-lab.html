@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chat Lab — Module Testing</title>
+<style>
+  :root {
+    --bg: #0a0f0a;
+    --bg-panel: #111a11;
+    --bg-surface: #0e150e;
+    --bg-input: #1a241a;
+    --border: #2a3a2a;
+    --text: #e8e8e0;
+    --text-muted: #6a7a6a;
+    --text-dim: #4a5a4a;
+    --user-color: #60a5fa;
+    --system-color: #5a6a5a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "SF Mono", "Fira Code", monospace;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Toolbar */
+  #toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    flex-shrink: 0;
+  }
+
+  #toolbar .title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  #toolbar select, #toolbar button {
+    font-family: inherit;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text);
+    cursor: pointer;
+  }
+  #toolbar button:hover { background: var(--border); }
+
+  #toolbar .spacer { flex: 1; }
+
+  #toolbar .version {
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+  }
+
+  #toolbar .hot-reload {
+    background: #f59e0b;
+    color: #000;
+    font-weight: 700;
+    border: none;
+  }
+  #toolbar .hot-reload:hover { background: #fbbf24; }
+
+  /* Status bar */
+  #status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 16px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  #status-bar .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #ef4444;
+    transition: background 0.3s;
+  }
+  #status-bar .dot.connected { background: #4ade80; }
+
+  /* Chat container */
+  #chat-container {
+    flex: 1;
+    min-height: 0;
+    padding: 16px;
+  }
+
+  /* Log panel */
+  #log-panel {
+    height: 120px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+    overflow-y: auto;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    font-family: "SF Mono", monospace;
+  }
+  #log-panel .log-entry { padding: 1px 0; }
+  #log-panel .log-entry.error { color: #ef4444; }
+  #log-panel .log-entry.success { color: #4ade80; }
+  #log-panel .log-entry.info { color: #60a5fa; }
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <span class="title">🧪 Chat Lab</span>
+
+  <label style="font-size:11px;color:var(--text-muted)">Agent:</label>
+  <select id="agent-select">
+    <option value="main" data-name="Moss" data-emoji="🌱" data-color="#4ade80">🌱 Moss</option>
+    <option value="wren" data-name="Wren" data-emoji="🪶" data-color="#a78bfa">🪶 Wren</option>
+    <option value="kit" data-name="Kit" data-emoji="🧶" data-color="#fb923c">🧶 Kit</option>
+    <option value="sol" data-name="Sol" data-emoji="☀️" data-color="#facc15">☀️ Sol</option>
+  </select>
+
+  <span class="spacer"></span>
+
+  <span class="version" id="version-badge">v?</span>
+  <button class="hot-reload" id="reload-btn" title="Hot-reload the chat module from disk">🔄 Hot Reload</button>
+</div>
+
+<!-- Status bar -->
+<div id="status-bar">
+  <span class="dot" id="ws-dot"></span>
+  <span id="ws-status">disconnected</span>
+  <span style="flex:1"></span>
+  <span id="session-label">—</span>
+</div>
+
+<!-- Chat -->
+<div id="chat-container"></div>
+
+<!-- Log -->
+<div id="log-panel">
+  <div class="log-entry info">Chat Lab initialized. Select an agent and start chatting.</div>
+</div>
+
+<script>
+  const GW_URL = 'ws://localhost:18789/';
+  const GW_TOKEN = '775969809e41d4bd735bf3bb4839acd1b7be21a406411780';
+
+  // Module loading
+  let chatModule = null;
+  let currentChat = null;
+  let moduleVersion = 0;
+
+  function log(msg, type = '') {
+    const panel = document.getElementById('log-panel');
+    const el = document.createElement('div');
+    el.className = 'log-entry ' + type;
+    const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+    el.textContent = `[${now}] ${msg}`;
+    panel.appendChild(el);
+    panel.scrollTop = panel.scrollHeight;
+  }
+
+  async function loadModule() {
+    // Cache-bust by appending timestamp
+    const url = `/shared/agent-chat.js?t=${Date.now()}`;
+    try {
+      // Fetch as text and eval — allows re-execution of the module
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const code = await resp.text();
+
+      // Create a fresh module scope
+      const moduleShim = { exports: {} };
+      const wrappedCode = `(function(module, exports) { ${code} })(moduleShim, moduleShim.exports);`;
+      eval(wrappedCode);
+
+      chatModule = moduleShim.exports;
+      moduleVersion = chatModule.AgentChat?.version || '?';
+      document.getElementById('version-badge').textContent = `v${moduleVersion}`;
+      log(`Module loaded — AgentChat v${moduleVersion}`, 'success');
+      return true;
+    } catch (err) {
+      log(`Module load failed: ${err.message}`, 'error');
+      return false;
+    }
+  }
+
+  function createChat(agentId) {
+    // Destroy existing — fully disconnect to prevent zombie reconnect loops
+    if (currentChat) {
+      if (currentChat.conn) currentChat.conn.disconnect();
+      currentChat.destroy();
+      currentChat = null;
+    }
+
+    if (!chatModule || !chatModule.AgentChat) {
+      log('No module loaded — click Hot Reload', 'error');
+      return;
+    }
+
+    const sel = document.getElementById('agent-select');
+    const opt = sel.options[sel.selectedIndex];
+    const name = opt.dataset.name;
+    const emoji = opt.dataset.emoji;
+    const color = opt.dataset.color;
+
+    const container = document.getElementById('chat-container');
+    container.innerHTML = '';
+
+    // Determine session key
+    const sessionKey = agentId === 'main' ? 'main' : `agent:${agentId}:main`;
+    const altKeys = agentId === 'main'
+      ? ['agent:main:main', 'agent:main:slack:channel:c0ac6trepe2']
+      : [`agent:${agentId}:slack:channel:c0ac6trepe2`];
+
+    log(`Creating chat: agent=${agentId}, session=${sessionKey}`, 'info');
+
+    // Create a FRESH GatewayConnection (not singleton) to avoid stale WS from prior module loads
+    const freshConn = new chatModule.GatewayConnection(GW_URL, GW_TOKEN);
+
+    currentChat = new chatModule.AgentChat({
+      container,
+      agentId,
+      agentName: name,
+      agentEmoji: emoji,
+      agentColor: color,
+      sessionKey,
+      altKeys,
+      gatewayUrl: GW_URL,
+      gatewayToken: GW_TOKEN,
+      showFilters: true,
+      onPageContext: () => 'Chat Lab (testing page)',
+    });
+
+    // Override: use our fresh connection instead of shared singleton
+    currentChat.conn = freshConn;
+    freshConn.addListener(currentChat);
+    freshConn.onStatus((s) => {
+      if (currentChat._statusEl) currentChat._statusEl.textContent = s;
+      document.getElementById('ws-status').textContent = s;
+      const dot = document.getElementById('ws-dot');
+      dot.classList.toggle('connected', s === 'connected');
+      log(`WS: ${s}`, s === 'connected' ? 'success' : '');
+    });
+    freshConn.connect();
+
+    // Status tracking already set up above with freshConn
+
+    // Watch for session changes
+    const origFetch = currentChat._fetchHistory.bind(currentChat);
+    currentChat._fetchHistory = async function(sk) {
+      document.getElementById('session-label').textContent = this._sessionLabel(sk);
+      log(`Fetching history: ${sk}`, 'info');
+      return origFetch(sk);
+    };
+  }
+
+  // Hot reload
+  async function hotReload() {
+    log('Hot-reloading module…', 'info');
+    const currentSession = currentChat?.activeSessionKey;
+    const currentAgent = document.getElementById('agent-select').value;
+
+    const ok = await loadModule();
+    if (ok) {
+      createChat(currentAgent);
+      // Restore session selection if we had one
+      if (currentSession && currentChat) {
+        // Wait a beat for sessions to populate
+        setTimeout(() => {
+          if (currentChat._sessionSelect) {
+            currentChat._sessionSelect.value = currentSession;
+            currentChat.activeSessionKey = currentSession;
+            currentChat._fetchHistory(currentSession);
+          }
+        }, 1000);
+      }
+    }
+  }
+
+  // Event listeners
+  document.getElementById('agent-select').addEventListener('change', (e) => {
+    createChat(e.target.value);
+  });
+
+  document.getElementById('reload-btn').addEventListener('click', hotReload);
+
+  // Keyboard shortcut: Ctrl+R = hot reload (prevent page reload)
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+      e.preventDefault();
+      hotReload();
+    }
+  });
+
+  // Auto-reload: poll module file for changes every 2s
+  let lastModuleHash = '';
+  async function checkModuleChanged() {
+    try {
+      const resp = await fetch(`/shared/agent-chat.js?check=${Date.now()}`);
+      if (!resp.ok) return;
+      const text = await resp.text();
+      // Simple hash
+      let hash = 0;
+      for (let i = 0; i < text.length; i++) hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+      const hashStr = '' + hash;
+      if (lastModuleHash && hashStr !== lastModuleHash) {
+        log('Module file changed on disk — auto-reloading…', 'info');
+        await hotReload();
+      }
+      lastModuleHash = hashStr;
+    } catch {}
+  }
+  setInterval(checkModuleChanged, 2000);
+
+  // Boot
+  (async () => {
+    await loadModule();
+    createChat('main');
+  })();
+</script>
+</body>
+</html>
