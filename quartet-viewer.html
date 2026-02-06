@@ -801,7 +801,7 @@ function removeTypingIndicator(agentName) {
 }
 
 // Message rendering
-// Internal OpenClaw messages that should be hidden from display
+// Internal OpenClaw messages that should ALWAYS be hidden
 const INTERNAL_MESSAGE_PATTERNS = [
   /^NO_REPLY$/,
   /^HEARTBEAT_OK$/,
@@ -813,20 +813,51 @@ const INTERNAL_MESSAGE_PATTERNS = [
   /^\s*$/,  // Empty/whitespace-only messages
 ];
 
+// System messages (cron, heartbeat, etc) - toggleable via filter
+const SYSTEM_MESSAGE_PATTERNS = [
+  /^System: \[/,           // Cron/system injections like "System: [2026-02-05] Cron:"
+  /^Read HEARTBEAT\.md/,   // Heartbeat prompt
+];
+
+// Tool-related content patterns
+const TOOL_MESSAGE_PATTERNS = [
+  /^<function_calls>/,
+  /^<function_results>/,
+  /"type":\s*"toolCall"/,
+  /"type":\s*"toolResult"/,
+];
+
 function isInternalMessage(text) {
   if (!text || typeof text !== 'string') return false;
   const trimmed = text.trim();
   return INTERNAL_MESSAGE_PATTERNS.some(pattern => pattern.test(trimmed));
 }
 
+function isSystemMessage(text) {
+  if (!text || typeof text !== 'string') return false;
+  return SYSTEM_MESSAGE_PATTERNS.some(pattern => pattern.test(text));
+}
+
+function isToolMessage(text) {
+  if (!text || typeof text !== 'string') return false;
+  return TOOL_MESSAGE_PATTERNS.some(pattern => pattern.test(text));
+}
+
 function appendMessage(agentName, role, text, streaming) {
   const container = document.getElementById(`messages-${agentName}`);
   if (!container) return null;
   
-  // Filter internal OpenClaw control messages
+  // Always filter internal control messages
   if (isInternalMessage(text)) return null;
   
-  if (role === 'system' && !agentFilters[agentName].systemMessages) return null;
+  // Filter system messages if disabled
+  if (isSystemMessage(text) && !agentFilters[agentName].systemMessages) return null;
+  
+  // Filter tool results by role
+  if (role === 'toolResult' && !agentFilters[agentName].toolCalls) return null;
+  
+  // Filter tool-related content patterns if disabled  
+  if (isToolMessage(text) && !agentFilters[agentName].toolCalls) return null;
 
   const cfg = AGENTS[agentName];
   const div = document.createElement('div');
@@ -839,6 +870,8 @@ function appendMessage(agentName, role, text, streaming) {
     roleLabel.style.color = `var(--${cfg.color}-color)`;
   } else if (role === 'user') {
     roleLabel.textContent = '🌙 recxa';
+  } else if (role === 'toolResult') {
+    roleLabel.textContent = '⚡ tool';
   } else {
     roleLabel.textContent = '⚙ system';
   }
