@@ -850,14 +850,15 @@ function appendMessage(agentName, role, text, streaming) {
   // Always filter internal control messages
   if (isInternalMessage(text)) return null;
   
-  // Filter system messages if disabled
-  if (isSystemMessage(text) && !agentFilters[agentName].systemMessages) return null;
-  
   // Filter tool results by role
   if (role === 'toolResult' && !agentFilters[agentName].toolCalls) return null;
   
   // Filter tool-related content patterns if disabled  
   if (isToolMessage(text) && !agentFilters[agentName].toolCalls) return null;
+  
+  // "System" = anything that's not assistant/user/toolResult (matches the display logic)
+  const isSystemRole = role !== 'assistant' && role !== 'user' && role !== 'toolResult';
+  if (isSystemRole && !agentFilters[agentName].systemMessages) return null;
 
   const cfg = AGENTS[agentName];
   const div = document.createElement('div');
