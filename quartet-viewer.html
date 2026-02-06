@@ -40,12 +40,11 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  /* Scrollbar */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
   ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
 
-  /* ── Password Screen ── */
+  /* Password Screen */
   #password-screen {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.97);
@@ -54,7 +53,6 @@
     backdrop-filter: blur(12px);
   }
   #password-screen.hidden { display: none; }
-
   .pw-card {
     background: var(--bg-surface);
     border: 1px solid var(--border);
@@ -64,7 +62,7 @@
     text-align: center;
   }
   .pw-card h1 { font-size: 36px; margin-bottom: 4px; color: var(--moss-color); }
-  .pw-card .subtitle { color: var(--text-muted); margin-bottom: 28px; font-size: 13px; letter-spacing: 0.5px; }
+  .pw-card .subtitle { color: var(--text-muted); margin-bottom: 28px; font-size: 13px; }
   .pw-form { display: flex; gap: 8px; }
   .pw-form input {
     flex: 1; padding: 12px 16px;
@@ -80,14 +78,12 @@
     font-weight: 700; cursor: pointer; font-size: 14px;
     font-family: inherit;
   }
-  .pw-form button:hover { opacity: 0.9; }
   .pw-error { color: #ef4444; font-size: 13px; margin-top: 12px; min-height: 18px; }
 
-  /* ── Main Layout ── */
+  /* Main Layout */
   #app { display: none; flex-direction: column; height: 100%; height: 100dvh; }
   #app.active { display: flex; }
 
-  /* Header */
   .header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 16px;
@@ -95,25 +91,14 @@
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
-  .header-title {
-    font-size: 16px; font-weight: 700;
-    color: var(--moss-color);
-  }
+  .header-title { font-size: 16px; font-weight: 700; color: var(--moss-color); }
   .header-title span { opacity: 0.6; font-weight: 400; }
-  .conn-status {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 12px; color: var(--text-muted);
-  }
-  .conn-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #ef4444;
-    transition: background 0.3s;
-  }
+  .conn-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; transition: background 0.3s; }
   .conn-dot.connected { background: var(--moss-color); }
   .conn-dot.connecting { background: var(--wren-color); animation: pulse 1s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-  /* Grid */
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -129,7 +114,6 @@
     display: flex; flex-direction: column;
     background: var(--bg-panel);
     min-height: 0;
-    position: relative;
   }
   .panel-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -141,16 +125,24 @@
   }
   .panel-header .agent-name { display: flex; align-items: center; gap: 6px; }
   .panel-header .agent-emoji { font-size: 16px; }
+  
+  /* Status badge - clickable to toggle controls */
   .panel-header .status-badge {
-    font-size: 10px; font-weight: 400;
-    padding: 2px 6px; border-radius: 8px;
+    font-size: 10px; font-weight: 500;
+    padding: 3px 8px; border-radius: 10px;
     background: rgba(255,255,255,0.05);
     color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
   }
+  .panel-header .status-badge:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  /* GREEN for streaming (changed from yellow) */
   .panel-header .status-badge.streaming {
-    color: var(--wren-color);
-    background: rgba(245,158,11,0.1);
-    animation: pulse 1.5s infinite;
+    color: var(--moss-color);
+    background: rgba(74,222,128,0.15);
   }
   .panel-header .status-badge.tool {
     color: var(--kit-color);
@@ -162,72 +154,19 @@
   .panel[data-agent="kit"] .panel-header { border-top: 2px solid var(--kit-color); }
   .panel[data-agent="sol"] .panel-header { border-top: 2px solid var(--sol-color); }
 
-  /* Messages area */
-  .messages {
-    flex: 1; overflow-y: auto; overflow-x: hidden;
-    padding: 8px;
-    display: flex; flex-direction: column;
-    gap: 4px;
-    min-height: 0;
-    scroll-behavior: smooth;
-  }
-
-  .msg {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 13px;
-    line-height: 1.5;
-    word-break: break-word;
-    white-space: pre-wrap;
-    max-width: 100%;
-  }
-  .msg .role {
-    font-weight: 700;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
-    display: block;
-  }
-  .msg.user { background: rgba(255,255,255,0.03); }
-  .msg.user .role { color: var(--user-color); }
-  .msg.assistant .role { opacity: 0.7; }
-  .msg.system { background: rgba(255,255,255,0.02); border-left: 2px solid var(--system-color); padding-left: 10px; }
-  .msg.system .role { color: var(--system-color); font-size: 10px; }
-  .msg.streaming { border-left: 2px solid; padding-left: 10px; }
-  .msg.streaming::after {
-    content: '▊'; animation: blink 0.8s step-end infinite;
-    opacity: 0.5;
-  }
-  @keyframes blink { 0%,100% { opacity: 0.5; } 50% { opacity: 0; } }
-
-  .msg.tool-call {
-    font-size: 11px;
-    color: var(--text-dim);
-    background: rgba(255,255,255,0.02);
-    font-style: italic;
-    padding: 2px 8px;
-  }
-
-  .panel[data-agent="moss"] .msg.assistant .role { color: var(--moss-color); }
-  .panel[data-agent="wren"] .msg.assistant .role { color: var(--wren-color); }
-  .panel[data-agent="kit"] .msg.assistant .role { color: var(--kit-color); }
-  .panel[data-agent="sol"] .msg.assistant .role { color: var(--sol-color); }
-
-  .panel[data-agent="moss"] .msg.streaming { border-color: var(--moss-color); }
-  .panel[data-agent="wren"] .msg.streaming { border-color: var(--wren-color); }
-  .panel[data-agent="kit"] .msg.streaming { border-color: var(--kit-color); }
-  .panel[data-agent="sol"] .msg.streaming { border-color: var(--sol-color); }
-
-  /* Filter bar */
-  .filter-bar {
+  /* Controls bar - HIDDEN by default, toggled by clicking status badge */
+  .controls-bar {
     padding: 6px 8px;
     border-bottom: 1px solid var(--border);
-    background: var(--bg-deep);
-    display: flex;
+    background: var(--bg-surface);
+    display: none; /* hidden by default */
+    flex-wrap: wrap;
     gap: 4px;
     flex-shrink: 0;
+    align-items: center;
   }
+  .controls-bar.visible { display: flex; }
+  
   .filter-btn {
     padding: 2px 6px;
     font-size: 10px;
@@ -236,7 +175,7 @@
     border-radius: 3px;
     color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
     font-family: inherit;
   }
   .filter-btn:hover { background: var(--bg-input); }
@@ -246,16 +185,155 @@
     border-color: var(--moss-color);
     font-weight: 600;
   }
-  .filter-btn.active:hover { opacity: 0.9; }
+  
+  /* Session selector */
+  .session-select {
+    padding: 2px 4px;
+    font-size: 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font-family: inherit;
+    cursor: pointer;
+    max-width: 120px;
+    margin-left: auto;
+  }
+  .session-select:focus { border-color: var(--moss-color); outline: none; }
 
-  /* Received messages */
-  .msg.received {
-    background: rgba(245,158,11,0.08);
-    border-left: 2px solid var(--wren-color);
+  /* Messages area */
+  .messages {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 8px;
+    display: flex; flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+  }
+
+  /* Message styling with smooth transitions */
+  .msg {
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.55;
+    word-break: break-word;
+    max-width: 100%;
+    transition: opacity 0.15s ease;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .msg .role {
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+    display: block;
+  }
+  .msg.user { background: rgba(255,255,255,0.04); }
+  .msg.user .role { color: var(--user-color); }
+  .msg.assistant { background: rgba(255,255,255,0.02); }
+  .msg.assistant .role { opacity: 0.8; }
+  .msg.system { 
+    background: rgba(255,255,255,0.02); 
+    border-left: 2px solid var(--system-color); 
+    padding-left: 10px;
+    font-size: 12px;
+  }
+  .msg.system .role { color: var(--system-color); font-size: 9px; }
+  
+  /* Streaming message - green accent */
+  .msg.streaming { 
+    border-left: 2px solid var(--moss-color); 
     padding-left: 10px;
   }
-  .msg.received .role { color: var(--wren-color); }
-  .msg.received .msg-content { font-style: italic; opacity: 0.9; }
+  
+  /* Typing indicator inline */
+  .msg.typing {
+    background: transparent;
+    padding: 4px 10px;
+  }
+  .typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-style: italic;
+  }
+  .typing-dots {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .typing-dots span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--moss-color);
+    animation: typingBounce 1.4s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .msg.tool-call {
+    font-size: 11px;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.02);
+    font-style: italic;
+    padding: 3px 8px;
+  }
+
+  .panel[data-agent="moss"] .msg.assistant .role { color: var(--moss-color); }
+  .panel[data-agent="wren"] .msg.assistant .role { color: var(--wren-color); }
+  .panel[data-agent="kit"] .msg.assistant .role { color: var(--kit-color); }
+  .panel[data-agent="sol"] .msg.assistant .role { color: var(--sol-color); }
+  
+  .panel[data-agent="moss"] .msg.streaming { border-color: var(--moss-color); }
+  .panel[data-agent="wren"] .msg.streaming { border-color: var(--wren-color); }
+  .panel[data-agent="kit"] .msg.streaming { border-color: var(--kit-color); }
+  .panel[data-agent="sol"] .msg.streaming { border-color: var(--sol-color); }
+
+  /* Markdown content - works during streaming too */
+  .msg .md-content {
+    line-height: 1.6;
+  }
+  .msg .md-content h1, .msg .md-content h2, .msg .md-content h3 {
+    margin: 8px 0 4px; font-size: 13px; color: var(--text); font-weight: 700;
+  }
+  .msg .md-content h1 { font-size: 15px; }
+  .msg .md-content h2 { font-size: 14px; }
+  .msg .md-content p { margin: 3px 0; }
+  .msg .md-content ul, .msg .md-content ol { margin: 3px 0; padding-left: 20px; }
+  .msg .md-content li { margin: 2px 0; }
+  .msg .md-content code {
+    background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px;
+    font-size: 12px; font-family: inherit;
+  }
+  .msg .md-content pre {
+    background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px;
+    overflow-x: auto; margin: 6px 0; font-size: 12px;
+  }
+  .msg .md-content pre code { background: none; padding: 0; }
+  .msg .md-content blockquote {
+    border-left: 2px solid var(--text-dim); padding-left: 10px;
+    color: var(--text-muted); margin: 6px 0; font-style: italic;
+  }
+  .msg .md-content strong { color: var(--text); }
+  .msg .md-content em { opacity: 0.9; }
+  .msg .md-content a { color: var(--moss-color); text-decoration: none; }
+  .msg .md-content a:hover { text-decoration: underline; }
+  .msg .md-content hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+  .msg .md-content table { border-collapse: collapse; margin: 6px 0; font-size: 12px; }
+  .msg .md-content th, .msg .md-content td { border: 1px solid var(--border); padding: 4px 8px; }
+  .msg .md-content th { background: var(--bg-surface); }
 
   /* Input */
   .panel-input {
@@ -271,63 +349,25 @@
     border-radius: 8px; color: var(--text);
     font-size: 13px; outline: none;
     font-family: inherit;
+    transition: border-color 0.15s;
   }
-  .panel-input input:focus { border-color: rgba(255,255,255,0.2); }
+  .panel-input input:focus { border-color: rgba(255,255,255,0.25); }
   .panel-input button {
-    padding: 8px 12px;
+    padding: 8px 14px;
     border: none; border-radius: 8px;
     font-weight: 700; cursor: pointer;
-    font-size: 12px; font-family: inherit;
+    font-size: 13px; font-family: inherit;
     color: #000;
+    transition: opacity 0.15s;
   }
   .panel[data-agent="moss"] .panel-input button { background: var(--moss-color); }
   .panel[data-agent="wren"] .panel-input button { background: var(--wren-color); }
   .panel[data-agent="kit"] .panel-input button { background: var(--kit-color); }
   .panel[data-agent="sol"] .panel-input button { background: var(--sol-color); }
   .panel-input button:hover { opacity: 0.85; }
-  .panel-input button:disabled { opacity: 0.4; cursor: default; }
 
-  /* Empty state */
-  .empty-state {
-    flex: 1; display: flex;
-    align-items: center; justify-content: center;
-    color: var(--text-dim); font-size: 12px;
-    font-style: italic;
-  }
-
-  /* Markdown styles */
-  .msg .md-content h1, .msg .md-content h2, .msg .md-content h3 {
-    margin: 6px 0 3px; font-size: 13px; color: var(--text);
-  }
-  .msg .md-content h1 { font-size: 15px; }
-  .msg .md-content h2 { font-size: 14px; }
-  .msg .md-content p { margin: 2px 0; }
-  .msg .md-content ul, .msg .md-content ol { margin: 2px 0; padding-left: 18px; }
-  .msg .md-content li { margin: 1px 0; }
-  .msg .md-content code {
-    background: rgba(255,255,255,0.08); padding: 1px 4px; border-radius: 3px;
-    font-size: 12px; font-family: inherit;
-  }
-  .msg .md-content pre {
-    background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px;
-    overflow-x: auto; margin: 4px 0; font-size: 12px;
-  }
-  .msg .md-content pre code { background: none; padding: 0; }
-  .msg .md-content blockquote {
-    border-left: 2px solid var(--text-dim); padding-left: 8px;
-    color: var(--text-muted); margin: 4px 0;
-  }
-  .msg .md-content strong { color: var(--text); }
-  .msg .md-content a { color: var(--moss-color); text-decoration: none; }
-  .msg .md-content a:hover { text-decoration: underline; }
-  .msg .md-content hr { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
-
-  /* Mobile responsive */
   @media (max-width: 768px) {
-    .grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr 1fr 1fr 1fr;
-    }
+    .grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr 1fr; }
     .panel-header { padding: 4px 10px; }
     .messages { padding: 4px; }
     .msg { font-size: 12px; }
@@ -336,7 +376,6 @@
 </head>
 <body>
 
-<!-- Password Gate -->
 <div id="password-screen">
   <div class="pw-card">
     <h1>🌲</h1>
@@ -349,457 +388,304 @@
   </div>
 </div>
 
-<!-- Main App -->
 <div id="app">
   <div class="header">
     <div class="header-title">🌲 Quartet <span>viewer</span></div>
     <div class="conn-status">
-      <button onclick="refreshHistories()" style="background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;font-family:inherit;margin-right:8px;">↻ refresh</button>
+      <button onclick="refreshHistories()" style="background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;font-family:inherit;margin-right:8px;">↻</button>
       <div class="conn-dot" id="conn-dot"></div>
       <span id="conn-text">disconnected</span>
     </div>
   </div>
-  <div class="grid">
-    <div class="panel" data-agent="moss">
-      <div class="panel-header">
-        <div class="agent-name"><span class="agent-emoji">🌱</span> Moss</div>
-        <div class="status-badge" id="status-moss">idle</div>
-      </div>
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="systemMessages" onclick="toggleFilter('moss', 'systemMessages')">
-          ⚙ System
-        </button>
-        <button class="filter-btn" data-filter="toolCalls" onclick="toggleFilter('moss', 'toolCalls')">
-          ⚡ Tools
-        </button>
-        <button class="filter-btn active" data-filter="crossAgentChats" onclick="toggleFilter('moss', 'crossAgentChats')">
-          💬 Cross-Agent
-        </button>
-      </div>
-      <div class="messages" id="messages-moss"></div>
-      <div class="panel-input">
-        <input type="text" id="input-moss" placeholder="Talk to Moss…" autocomplete="off">
-        <button onclick="sendMessage('moss')" id="btn-moss">↑</button>
-      </div>
-    </div>
-    <div class="panel" data-agent="wren">
-      <div class="panel-header">
-        <div class="agent-name"><span class="agent-emoji">🪶</span> Wren</div>
-        <div class="status-badge" id="status-wren">idle</div>
-      </div>
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="systemMessages" onclick="toggleFilter('wren', 'systemMessages')">
-          ⚙ System
-        </button>
-        <button class="filter-btn" data-filter="toolCalls" onclick="toggleFilter('wren', 'toolCalls')">
-          ⚡ Tools
-        </button>
-        <button class="filter-btn active" data-filter="crossAgentChats" onclick="toggleFilter('wren', 'crossAgentChats')">
-          💬 Cross-Agent
-        </button>
-      </div>
-      <div class="messages" id="messages-wren"></div>
-      <div class="panel-input">
-        <input type="text" id="input-wren" placeholder="Talk to Wren…" autocomplete="off">
-        <button onclick="sendMessage('wren')" id="btn-wren">↑</button>
-      </div>
-    </div>
-    <div class="panel" data-agent="kit">
-      <div class="panel-header">
-        <div class="agent-name"><span class="agent-emoji">🧶</span> Kit</div>
-        <div class="status-badge" id="status-kit">idle</div>
-      </div>
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="systemMessages" onclick="toggleFilter('kit', 'systemMessages')">
-          ⚙ System
-        </button>
-        <button class="filter-btn" data-filter="toolCalls" onclick="toggleFilter('kit', 'toolCalls')">
-          ⚡ Tools
-        </button>
-        <button class="filter-btn active" data-filter="crossAgentChats" onclick="toggleFilter('kit', 'crossAgentChats')">
-          💬 Cross-Agent
-        </button>
-      </div>
-      <div class="messages" id="messages-kit"></div>
-      <div class="panel-input">
-        <input type="text" id="input-kit" placeholder="Talk to Kit…" autocomplete="off">
-        <button onclick="sendMessage('kit')" id="btn-kit">↑</button>
-      </div>
-    </div>
-    <div class="panel" data-agent="sol">
-      <div class="panel-header">
-        <div class="agent-name"><span class="agent-emoji">☀️</span> Sol</div>
-        <div class="status-badge" id="status-sol">idle</div>
-      </div>
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="systemMessages" onclick="toggleFilter('sol', 'systemMessages')">
-          ⚙ System
-        </button>
-        <button class="filter-btn" data-filter="toolCalls" onclick="toggleFilter('sol', 'toolCalls')">
-          ⚡ Tools
-        </button>
-        <button class="filter-btn active" data-filter="crossAgentChats" onclick="toggleFilter('sol', 'crossAgentChats')">
-          💬 Cross-Agent
-        </button>
-      </div>
-      <div class="messages" id="messages-sol"></div>
-      <div class="panel-input">
-        <input type="text" id="input-sol" placeholder="Talk to Sol…" autocomplete="off">
-        <button onclick="sendMessage('sol')" id="btn-sol">↑</button>
-      </div>
-    </div>
-  </div>
+  <div class="grid" id="grid"></div>
 </div>
 
 <script>
-// ── Markdown config ──
+// Markdown config
 if (typeof marked !== 'undefined') {
   marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
 }
 
-// ── Config ──
 const GATEWAY_URL = 'ws://localhost:18789/';
 const GATEWAY_TOKEN = '775969809e41d4bd735bf3bb4839acd1b7be21a406411780';
 const PASSWORD = 'grove2026';
 
 const AGENTS = {
-  moss: { emoji: '🌱', sessionKey: 'agent:main:slack:channel:c0ac6trepe2', altKeys: ['main', 'agent:main:main'] },
-  wren: { emoji: '🪶', sessionKey: 'agent:wren:main', altKeys: ['wren', 'agent:wren:slack:channel:c0ac6trepe2'] },
-  kit:  { emoji: '🧶', sessionKey: 'agent:kit:main',  altKeys: ['kit', 'agent:kit:slack:channel:c0ac6trepe2'] },
-  sol:  { emoji: '☀️', sessionKey: 'agent:sol:main',  altKeys: ['sol', 'agent:sol:slack:channel:c0ac6trepe2'] },
+  moss: { emoji: '🌱', color: 'moss', sessionKey: 'main', altKeys: ['agent:main:main', 'agent:main:slack:channel:c0ac6trepe2'] },
+  wren: { emoji: '🪶', color: 'wren', sessionKey: 'agent:wren:main', altKeys: ['wren', 'agent:wren:slack:channel:c0ac6trepe2'] },
+  kit:  { emoji: '🧶', color: 'kit',  sessionKey: 'agent:kit:main',  altKeys: ['kit', 'agent:kit:slack:channel:c0ac6trepe2'] },
+  sol:  { emoji: '☀️', color: 'sol',  sessionKey: 'agent:sol:main',  altKeys: ['sol', 'agent:sol:slack:channel:c0ac6trepe2'] },
 };
 
-// Build session→agent lookup
-const sessionToAgent = {};
-for (const [name, cfg] of Object.entries(AGENTS)) {
-  sessionToAgent[cfg.sessionKey] = name;
-  for (const alt of cfg.altKeys) sessionToAgent[alt] = name;
-}
-
-// ── State ──
+// State
 let ws = null;
 let connected = false;
 let reqCounter = 0;
-
-// Message filters per agent
+const activeSessionKeys = { moss: 'main', wren: 'agent:wren:main', kit: 'agent:kit:main', sol: 'agent:sol:main' };
+const sessionToAgent = {};
 const agentFilters = {};
-for (const name of Object.keys(AGENTS)) {
-  agentFilters[name] = {
-    systemMessages: true,
-    toolCalls: false, // hidden by default
-    crossAgentChats: true
-  };
-}
-
-// Per-agent streaming state
 const agentState = {};
-for (const name of Object.keys(AGENTS)) {
-  agentState[name] = {
-    runs: {},       // runId -> { buffer, el }
-    streaming: false,
-  };
+const discoveredSessions = {}; // agentName -> [{key, label}, ...]
+const pendingHistoryReqs = {};
+const pendingSendReqs = {};
+
+// Build session lookup
+for (const [name, cfg] of Object.entries(AGENTS)) {
+  sessionToAgent[cfg.sessionKey] = name;
+  for (const alt of cfg.altKeys) sessionToAgent[alt] = name;
+  agentFilters[name] = { systemMessages: true, toolCalls: false, crossAgentChats: true };
+  agentState[name] = { runs: {}, typingEl: null };
+}
+sessionToAgent['main'] = 'moss';
+sessionToAgent['agent:main:main'] = 'moss';
+
+// Build panels dynamically
+function buildPanels() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  
+  for (const [name, cfg] of Object.entries(AGENTS)) {
+    const panel = document.createElement('div');
+    panel.className = 'panel';
+    panel.dataset.agent = name;
+    panel.innerHTML = `
+      <div class="panel-header">
+        <div class="agent-name"><span class="agent-emoji">${cfg.emoji}</span> ${name.charAt(0).toUpperCase() + name.slice(1)}</div>
+        <div class="status-badge" id="status-${name}" onclick="toggleControls('${name}')">idle</div>
+      </div>
+      <div class="controls-bar" id="controls-${name}">
+        <button class="filter-btn active" data-filter="systemMessages" onclick="toggleFilter('${name}', 'systemMessages')">⚙ System</button>
+        <button class="filter-btn" data-filter="toolCalls" onclick="toggleFilter('${name}', 'toolCalls')">⚡ Tools</button>
+        <button class="filter-btn active" data-filter="crossAgentChats" onclick="toggleFilter('${name}', 'crossAgentChats')">💬 Cross</button>
+        <select class="session-select" id="session-${name}" onchange="switchSession('${name}', this.value)">
+          <option value="${cfg.sessionKey}">main</option>
+        </select>
+      </div>
+      <div class="messages" id="messages-${name}"></div>
+      <div class="panel-input">
+        <input type="text" id="input-${name}" placeholder="Talk to ${name.charAt(0).toUpperCase() + name.slice(1)}…" autocomplete="off">
+        <button onclick="sendMessage('${name}')" id="btn-${name}">↑</button>
+      </div>
+    `;
+    grid.appendChild(panel);
+    
+    // Enter key handler
+    document.getElementById(`input-${name}`).addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(name); }
+    });
+  }
 }
 
-// ── Password ──
+// Toggle controls bar visibility
+function toggleControls(agentName) {
+  const bar = document.getElementById(`controls-${agentName}`);
+  bar.classList.toggle('visible');
+}
+
+// Session switching
+function switchSession(agentName, sessionKey) {
+  activeSessionKeys[agentName] = sessionKey;
+  agentState[agentName].runs = {};
+  fetchHistory(agentName);
+}
+
+// Populate session dropdown
+function populateSessions(agentName, sessions) {
+  const select = document.getElementById(`session-${agentName}`);
+  if (!select) return;
+  
+  const current = activeSessionKeys[agentName];
+  select.innerHTML = '';
+  
+  const seen = new Set();
+  const addOpt = (key, label) => {
+    if (seen.has(key)) return;
+    seen.add(key);
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = label || formatSessionKey(key);
+    opt.selected = key === current;
+    select.appendChild(opt);
+  };
+  
+  // Add primary + alts
+  const cfg = AGENTS[agentName];
+  addOpt(cfg.sessionKey, 'main');
+  for (const alt of cfg.altKeys) addOpt(alt);
+  
+  // Add discovered
+  for (const s of sessions) addOpt(s.key, s.label);
+}
+
+function formatSessionKey(key) {
+  const k = key.toLowerCase();
+  if (k === 'main' || k.endsWith(':main')) return '💬 direct';
+  if (k.includes('slack:channel:')) {
+    if (k.includes(':thread:')) return '🧵 thread';
+    return '🔷 slack';
+  }
+  if (k.includes('cron:')) return '⏰ cron';
+  return key.split(':').pop().substring(0, 12);
+}
+
+// Password
 const pwInput = document.getElementById('pw-input');
 pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 
 function tryLogin() {
-  const pw = pwInput.value.trim();
-  if (pw === PASSWORD) {
+  if (pwInput.value.trim() === PASSWORD) {
     document.getElementById('password-screen').classList.add('hidden');
     document.getElementById('app').classList.add('active');
-    
-    // Initialize filter buttons
-    for (const name of Object.keys(AGENTS)) {
-      updateFilterButtons(name);
-    }
-    
+    buildPanels();
     connectGateway();
   } else {
     document.getElementById('pw-error').textContent = 'Wrong passphrase';
     pwInput.value = '';
-    pwInput.focus();
   }
 }
 
-// ── Input handlers ──
-for (const name of Object.keys(AGENTS)) {
-  const input = document.getElementById(`input-${name}`);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(name);
-    }
-  });
-}
-
-// ── Gateway Connection ──
-function uuid() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-}
-
+// Gateway connection
 function setConnStatus(state) {
-  const dot = document.getElementById('conn-dot');
-  const text = document.getElementById('conn-text');
-  dot.className = 'conn-dot ' + state;
-  text.textContent = state;
+  document.getElementById('conn-dot').className = 'conn-dot ' + state;
+  document.getElementById('conn-text').textContent = state;
 }
 
 function connectGateway() {
-  if (ws) { try { ws.close(); } catch(e) {} }
+  if (ws) try { ws.close(); } catch(e) {}
   setConnStatus('connecting');
-
-  // Determine WS URL — if page loaded over HTTPS, we can't connect to ws://localhost
-  // In that case, use the server's WebSocket proxy
-  let wsUrl = GATEWAY_URL;
-  if (location.protocol === 'https:') {
-    // Use proxy through our server
-    wsUrl = `wss://${location.host}/ws-proxy`;
-  }
-
-  ws = new WebSocket(wsUrl);
-
-  ws.onopen = () => {
-    console.log('WS opened, waiting for challenge...');
-  };
-
-  let gotChallenge = false;
-  let authenticated = false;
+  
+  ws = new WebSocket(GATEWAY_URL);
+  let gotChallenge = false, authenticated = false;
 
   ws.onmessage = (event) => {
     let data;
     try { data = JSON.parse(event.data); } catch(e) { return; }
 
-    // Step 1: receive challenge
     if (!gotChallenge && data.type === 'event' && data.event === 'connect.challenge') {
       gotChallenge = true;
-      console.log('Got challenge, sending auth...');
       ws.send(JSON.stringify({
-        type: 'req',
-        id: 'auth-' + (++reqCounter),
-        method: 'connect',
+        type: 'req', id: 'auth-' + (++reqCounter), method: 'connect',
         params: {
-          minProtocol: 3,
-          maxProtocol: 3,
-          client: {
-            id: 'webchat',
-            version: 'quartet-viewer',
-            platform: navigator.platform || 'web',
-            mode: 'webchat',
-          },
+          minProtocol: 3, maxProtocol: 3,
+          client: { id: 'webchat', version: 'quartet-v2', platform: navigator.platform || 'web', mode: 'webchat' },
           auth: { token: GATEWAY_TOKEN }
         }
       }));
       return;
     }
 
-    // Step 2: auth response
-    if (!authenticated && data.type === 'res' && data.id && data.id.startsWith('auth-')) {
+    if (!authenticated && data.type === 'res' && data.id?.startsWith('auth-')) {
       if (data.ok) {
         authenticated = true;
         connected = true;
         setConnStatus('connected');
-        console.log('Authenticated! Fetching histories...');
+        discoverAllSessions();
         fetchAllHistories();
       } else {
-        console.error('Auth failed:', data.error);
         setConnStatus('disconnected');
       }
       return;
     }
-
     if (!authenticated) return;
 
-    // Handle events
-    if (data.type === 'event') {
-      handleEvent(data);
-    }
-    // Handle responses (for history, send, etc.)
-    else if (data.type === 'res') {
-      handleResponse(data);
-    }
+    if (data.type === 'event') handleEvent(data);
+    else if (data.type === 'res') handleResponse(data);
   };
 
   ws.onclose = () => {
     connected = false;
     setConnStatus('disconnected');
-    console.log('WS closed, reconnecting in 3s...');
     setTimeout(connectGateway, 3000);
   };
-
-  ws.onerror = (e) => {
-    console.error('WS error:', e);
-  };
+  ws.onerror = () => {};
 }
 
-// ── History ──
-const pendingHistoryReqs = {}; // reqId -> agentName
-
-function fetchAllHistories() {
-  for (const [name, cfg] of Object.entries(AGENTS)) {
-    const reqId = 'hist-' + name + '-' + (++reqCounter);
-    pendingHistoryReqs[reqId] = name;
-    ws.send(JSON.stringify({
-      type: 'req',
-      id: reqId,
-      method: 'chat.history',
-      params: {
-        sessionKey: cfg.sessionKey,
-        limit: 30,
+// Discover sessions for all agents
+async function discoverAllSessions() {
+  for (const name of Object.keys(AGENTS)) {
+    try {
+      const resp = await fetch(`/api/sessions/${name === 'moss' ? 'main' : name}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.ok && Array.isArray(data.sessions)) {
+          discoveredSessions[name] = data.sessions.map(s => ({ key: s.key, label: formatSessionKey(s.key) }));
+          populateSessions(name, discoveredSessions[name]);
+        }
       }
-    }));
+    } catch(e) {}
   }
 }
 
-const pendingSendReqs = {}; // reqId -> agentName (to track run starts)
+function fetchAllHistories() {
+  for (const name of Object.keys(AGENTS)) fetchHistory(name);
+}
+
+function fetchHistory(agentName) {
+  const sessionKey = activeSessionKeys[agentName];
+  const reqId = 'hist-' + agentName + '-' + (++reqCounter);
+  pendingHistoryReqs[reqId] = agentName;
+  ws.send(JSON.stringify({ type: 'req', id: reqId, method: 'chat.history', params: { sessionKey, limit: 40 } }));
+}
 
 function handleResponse(data) {
   const reqId = data.id;
-
-  // History response
+  
   if (reqId && pendingHistoryReqs[reqId]) {
     const agentName = pendingHistoryReqs[reqId];
     delete pendingHistoryReqs[reqId];
-
     if (data.ok && data.payload) {
-      const messages = data.payload.messages || data.payload || [];
-      if (Array.isArray(messages)) {
-        renderHistory(agentName, messages);
-      }
-    } else {
-      // Try alt key
-      const cfg = AGENTS[agentName];
-      if (cfg && cfg.altKeys.length > 0 && !reqId.includes('alt')) {
-        const altReqId = 'hist-' + agentName + '-alt-' + (++reqCounter);
-        pendingHistoryReqs[altReqId] = agentName;
-        ws.send(JSON.stringify({
-          type: 'req',
-          id: altReqId,
-          method: 'chat.history',
-          params: {
-            sessionKey: cfg.altKeys[0],
-            limit: 30,
-          }
-        }));
-        // Update sessionToAgent with the alt key as primary for future sends
-        console.log(`Primary key failed for ${agentName}, trying alt: ${cfg.altKeys[0]}`);
-      } else {
-        console.warn(`History failed for ${agentName}:`, data.error);
-      }
+      const msgs = data.payload.messages || data.payload || [];
+      if (Array.isArray(msgs)) renderHistory(agentName, msgs);
     }
     return;
   }
-
-  // Send response — track runId
+  
   if (reqId && pendingSendReqs[reqId]) {
     const agentName = pendingSendReqs[reqId];
     delete pendingSendReqs[reqId];
-
-    if (data.ok && data.payload && data.payload.runId) {
-      const runId = data.payload.runId;
-      agentState[agentName].runs[runId] = { buffer: '', el: null };
-      console.log(`Run ${runId} started for ${agentName}`);
-    } else if (!data.ok) {
-      console.warn(`Send failed for ${agentName}:`, data.error);
-      // Try alt key if primary failed
-      // (handled separately if needed)
+    if (data.ok && data.payload?.runId) {
+      agentState[agentName].runs[data.payload.runId] = { buffer: '', el: null };
     }
-    return;
   }
 }
 
 function renderHistory(agentName, messages) {
   const container = document.getElementById(`messages-${agentName}`);
-  
-  // Don't refresh if there's an active stream — it would clobber it
   const as = agentState[agentName];
   if (as && Object.keys(as.runs).length > 0) return;
   
-  // Track message count to avoid unnecessary re-renders
-  const msgCount = messages.filter(m => extractText(m)).length;
-  const prevCount = container.dataset.msgCount;
-  if (prevCount && parseInt(prevCount) === msgCount) return; // no new messages
-  container.dataset.msgCount = msgCount;
-  
   container.innerHTML = '';
-
   for (const msg of messages) {
-    const role = msg.role || 'unknown';
-    const content = extractText(msg);
-    if (!content) continue;
-
-    // Detect inter-agent messages — user messages that contain agent signatures
-    let senderOverride = null;
-    if (role === 'user') {
-      for (const [name, cfg] of Object.entries(AGENTS)) {
-        if (name === agentName) continue;
-        const lc = content.toLowerCase();
-        if (lc.startsWith(`hey ${agentName}`) || lc.includes(`it's ${name}`) || lc.includes(`— ${name}`) || lc.includes(`- ${name}`)) {
-          senderOverride = name;
-          break;
-        }
-      }
-    }
-
-    appendMessage(agentName, role, content, false, senderOverride);
+    const text = extractText(msg);
+    if (!text) continue;
+    appendMessage(agentName, msg.role || 'unknown', text, false);
   }
   scrollToBottom(agentName);
 }
 
 function extractText(msg) {
   if (!msg) return '';
-  // msg.content can be string or array of blocks
-  const content = msg.content;
-  if (typeof content === 'string') return content;
-  if (Array.isArray(content)) {
-    const texts = [];
-    for (const block of content) {
-      if (typeof block === 'string') texts.push(block);
-      else if (block && block.type === 'text' && block.text) texts.push(block.text);
-    }
-    return texts.join('\n');
-  }
-  // Maybe message is { text: ... }
-  if (msg.text) return msg.text;
-  return '';
+  const c = msg.content;
+  if (typeof c === 'string') return c;
+  if (Array.isArray(c)) return c.map(b => typeof b === 'string' ? b : b?.text || '').join('\n');
+  return msg.text || '';
 }
 
-// ── Events ──
+// Event handling
 function handleEvent(data) {
-  const event = data.event;
-  const payload = data.payload || {};
-
-  if (event === 'chat') {
-    handleChatEvent(payload);
-  } else if (event === 'agent') {
-    handleAgentEvent(payload);
-  }
+  if (data.event === 'chat') handleChatEvent(data.payload || {});
+  else if (data.event === 'agent') handleAgentEvent(data.payload || {});
 }
 
-function resolveAgent(sessionKey) {
-  // Direct match
-  if (sessionToAgent[sessionKey]) return sessionToAgent[sessionKey];
-  // Partial match — check if sessionKey contains agent name
-  const lower = (sessionKey || '').toLowerCase();
-  for (const name of Object.keys(AGENTS)) {
-    if (lower.includes(name)) return name;
-  }
-  // Default to moss for "main"
-  if (lower === 'main') return 'moss';
-  return null;
+function isActiveSession(agentName, sessionKey) {
+  const active = activeSessionKeys[agentName];
+  return active && sessionKey && (sessionKey === active || sessionKey.toLowerCase() === active.toLowerCase());
 }
 
 function handleChatEvent(payload) {
   const sessionKey = payload.sessionKey || '';
-  const agentName = resolveAgent(sessionKey);
-  if (!agentName) {
-    console.log('Unknown session:', sessionKey);
-    return;
-  }
+  const agentName = sessionToAgent[sessionKey];
+  if (!agentName || !isActiveSession(agentName, sessionKey)) return;
 
   const state = payload.state;
   const runId = payload.runId;
@@ -808,7 +694,6 @@ function handleChatEvent(payload) {
   const fullText = extractText(message);
 
   if (role === 'user') {
-    // User message — just display it
     if (state === 'final' || state === 'delta') {
       appendMessage(agentName, 'user', fullText, false);
       scrollToBottom(agentName);
@@ -816,34 +701,35 @@ function handleChatEvent(payload) {
     return;
   }
 
-  // Assistant messages — handle streaming
   const as = agentState[agentName];
 
   if (state === 'delta') {
     if (!runId) return;
-    if (!as.runs[runId]) {
-      as.runs[runId] = { buffer: '', el: null };
-    }
+    if (!as.runs[runId]) as.runs[runId] = { buffer: '', el: null };
     const run = as.runs[runId];
-    const prevLen = run.buffer.length;
-
-    if (fullText.length > prevLen) {
+    
+    // Remove typing indicator when first content arrives
+    removeTypingIndicator(agentName);
+    
+    if (fullText.length > run.buffer.length) {
       run.buffer = fullText;
       if (!run.el) {
         run.el = appendMessage(agentName, 'assistant', fullText, true);
       } else {
-        updateStreamingMessage(run.el, fullText);
+        // LIVE MARKDOWN: render markdown while streaming
+        updateStreamingMessage(agentName, run.el, fullText);
       }
       scrollToBottom(agentName);
       setAgentStatus(agentName, 'streaming');
     }
   }
   else if (state === 'final') {
+    removeTypingIndicator(agentName);
     if (runId && as.runs[runId]) {
       const run = as.runs[runId];
       if (fullText) run.buffer = fullText;
       if (run.el) {
-        finalizeStreamingMessage(run.el, run.buffer);
+        finalizeMessage(agentName, run.el, run.buffer);
       } else if (run.buffer) {
         appendMessage(agentName, 'assistant', run.buffer, false);
       }
@@ -852,261 +738,214 @@ function handleChatEvent(payload) {
       appendMessage(agentName, 'assistant', fullText, false);
     }
     scrollToBottom(agentName);
-    // Check if any other runs still active
-    if (Object.keys(as.runs).length === 0) {
-      setAgentStatus(agentName, 'idle');
-    }
+    if (Object.keys(as.runs).length === 0) setAgentStatus(agentName, 'idle');
   }
   else if (state === 'aborted' || state === 'error') {
+    removeTypingIndicator(agentName);
     if (runId && as.runs[runId]) {
       const run = as.runs[runId];
-      if (run.el) {
-        finalizeStreamingMessage(run.el, run.buffer || '[aborted]');
-      }
+      if (run.el) finalizeMessage(agentName, run.el, run.buffer || '[aborted]');
       delete as.runs[runId];
     }
-    if (Object.keys(as.runs).length === 0) {
-      setAgentStatus(agentName, 'idle');
-    }
+    if (Object.keys(as.runs).length === 0) setAgentStatus(agentName, 'idle');
   }
 }
 
 function handleAgentEvent(payload) {
   const sessionKey = payload.sessionKey || '';
-  const agentName = resolveAgent(sessionKey);
-  if (!agentName) return;
+  const agentName = sessionToAgent[sessionKey];
+  if (!agentName || !isActiveSession(agentName, sessionKey)) return;
 
-  const type = payload.type;
-  if (type === 'tool_use') {
-    const toolName = payload.name || 'tool';
-    // Show tool indicator
-    setAgentStatus(agentName, 'tool', toolName);
-    appendToolCall(agentName, toolName);
-    scrollToBottom(agentName);
-  }
-}
-
-// ── Message Filters ──
-function toggleFilter(agentName, filterName) {
-  agentFilters[agentName][filterName] = !agentFilters[agentName][filterName];
-  updateFilterButtons(agentName);
-  
-  // Re-render messages for this agent
-  const container = document.getElementById(`messages-${agentName}`);
-  const as = agentState[agentName];
-  if (as && Object.keys(as.runs).length === 0) {
-    // Only refresh if no active streams
-    fetchHistory(agentName);
-  }
-}
-
-function updateFilterButtons(agentName) {
-  const panel = document.querySelector(`[data-agent="${agentName}"]`);
-  if (!panel) return;
-  
-  const buttons = panel.querySelectorAll('.filter-btn');
-  buttons.forEach(btn => {
-    const filter = btn.dataset.filter;
-    btn.classList.toggle('active', agentFilters[agentName][filter]);
-  });
-}
-
-function fetchHistory(agentName) {
-  const cfg = AGENTS[agentName];
-  if (!cfg || !ws || !connected) return;
-  
-  const reqId = 'hist-' + agentName + '-' + (++reqCounter);
-  pendingHistoryReqs[reqId] = agentName;
-  ws.send(JSON.stringify({
-    type: 'req',
-    id: reqId,
-    method: 'chat.history',
-    params: {
-      sessionKey: cfg.sessionKey,
-      limit: 30,
+  if (payload.type === 'tool_use') {
+    setAgentStatus(agentName, 'tool', payload.name || 'tool');
+    if (agentFilters[agentName].toolCalls) {
+      appendToolCall(agentName, payload.name || 'tool');
+      scrollToBottom(agentName);
     }
-  }));
+  }
+  else if (payload.type === 'thinking' || payload.type === 'start') {
+    // Show typing indicator
+    showTypingIndicator(agentName);
+    setAgentStatus(agentName, 'streaming');
+  }
 }
 
-// ── DOM Helpers ──
-function appendMessage(agentName, role, text, streaming, senderOverride) {
+// Typing indicator
+function showTypingIndicator(agentName) {
+  const as = agentState[agentName];
+  if (as.typingEl) return;
+  
+  const container = document.getElementById(`messages-${agentName}`);
+  const cfg = AGENTS[agentName];
+  
+  const div = document.createElement('div');
+  div.className = 'msg typing';
+  div.innerHTML = `
+    <span class="role" style="color:var(--${cfg.color}-color)">${cfg.emoji} ${agentName}</span>
+    <span class="typing-indicator">
+      <span class="typing-dots"><span></span><span></span><span></span></span>
+      thinking...
+    </span>
+  `;
+  container.appendChild(div);
+  as.typingEl = div;
+  scrollToBottom(agentName);
+}
+
+function removeTypingIndicator(agentName) {
+  const as = agentState[agentName];
+  if (as.typingEl) {
+    as.typingEl.remove();
+    as.typingEl = null;
+  }
+}
+
+// Message rendering
+// Internal OpenClaw messages that should be hidden from display
+const INTERNAL_MESSAGE_PATTERNS = [
+  /^NO_REPLY$/,
+  /^HEARTBEAT_OK$/,
+  /^ANNOUNCE_SKIP$/,
+  /^Agent-to-agent announce/i,
+  /^Announce skipped/i,
+  /^\[Announcement from/i,
+  /^Cross-agent session/i,
+  /^\s*$/,  // Empty/whitespace-only messages
+];
+
+function isInternalMessage(text) {
+  if (!text || typeof text !== 'string') return false;
+  const trimmed = text.trim();
+  return INTERNAL_MESSAGE_PATTERNS.some(pattern => pattern.test(trimmed));
+}
+
+function appendMessage(agentName, role, text, streaming) {
   const container = document.getElementById(`messages-${agentName}`);
   if (!container) return null;
-
-  // Check filters
+  
+  // Filter internal OpenClaw control messages
+  if (isInternalMessage(text)) return null;
+  
   if (role === 'system' && !agentFilters[agentName].systemMessages) return null;
 
+  const cfg = AGENTS[agentName];
   const div = document.createElement('div');
   div.className = `msg ${role}${streaming ? ' streaming' : ''}`;
 
-  // If this is a received message (from another agent), style differently
-  if (role === 'user' && senderOverride) {
-    div.classList.add('received');
-  }
-
   const roleLabel = document.createElement('span');
   roleLabel.className = 'role';
-  // Show agent name instead of "assistant"
   if (role === 'assistant') {
-    const cfg = AGENTS[agentName];
-    roleLabel.textContent = cfg ? `${cfg.emoji} ${agentName}` : agentName;
-  } else if (role === 'user' && senderOverride && AGENTS[senderOverride]) {
-    const scfg = AGENTS[senderOverride];
-    roleLabel.textContent = `${scfg.emoji} ${senderOverride}`;
-    roleLabel.style.color = `var(--${senderOverride}-color)`;
+    roleLabel.textContent = `${cfg.emoji} ${agentName}`;
+    roleLabel.style.color = `var(--${cfg.color}-color)`;
   } else if (role === 'user') {
     roleLabel.textContent = '🌙 recxa';
-  } else if (role === 'system') {
-    roleLabel.textContent = '⚙ system';
   } else {
-    roleLabel.textContent = role;
+    roleLabel.textContent = '⚙ system';
   }
   div.appendChild(roleLabel);
 
   const textSpan = document.createElement('span');
-  textSpan.className = role === 'assistant' ? 'text-content md-content' : 'text-content';
-  if (role === 'assistant' && !streaming && typeof marked !== 'undefined') {
-    textSpan.innerHTML = marked.parse(text, { breaks: true, gfm: true });
-  } else {
-    textSpan.textContent = text;
-  }
+  textSpan.className = 'text-content md-content';
+  // Always render markdown (even while streaming for smoother experience)
+  textSpan.innerHTML = renderMarkdown(text);
   div.appendChild(textSpan);
 
   container.appendChild(div);
-
-  // Trim old messages (keep last 100)
-  while (container.children.length > 100) {
-    container.removeChild(container.firstChild);
-  }
-
+  while (container.children.length > 100) container.removeChild(container.firstChild);
+  
   return div;
 }
 
-function updateStreamingMessage(el, text) {
+function updateStreamingMessage(agentName, el, text) {
   if (!el) return;
-  const textSpan = el.querySelector('.text-content');
-  if (textSpan) textSpan.textContent = text;
-}
-
-function finalizeStreamingMessage(el, text) {
-  if (!el) return;
-  el.classList.remove('streaming');
   const textSpan = el.querySelector('.text-content');
   if (textSpan) {
-    if (typeof marked !== 'undefined') {
-      textSpan.classList.add('md-content');
-      textSpan.innerHTML = marked.parse(text, { breaks: true, gfm: true });
-    } else {
-      textSpan.textContent = text;
-    }
+    // Live markdown rendering while streaming
+    textSpan.innerHTML = renderMarkdown(text);
   }
 }
 
+function finalizeMessage(agentName, el, text) {
+  if (!el) return;
+  el.classList.remove('streaming');
+  const textSpan = el.querySelector('.text-content');
+  if (textSpan) textSpan.innerHTML = renderMarkdown(text);
+}
+
+function renderMarkdown(text) {
+  if (!text) return '';
+  if (typeof marked !== 'undefined') {
+    try {
+      return marked.parse(text, { breaks: true, gfm: true });
+    } catch(e) {
+      return escapeHtml(text).replace(/\n/g, '<br>');
+    }
+  }
+  return escapeHtml(text).replace(/\n/g, '<br>');
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function appendToolCall(agentName, toolName) {
-  // Respect filter
-  if (!agentFilters[agentName].toolCalls) return;
-  
   const container = document.getElementById(`messages-${agentName}`);
-  if (!container) return;
-  
   const div = document.createElement('div');
-  div.className = 'msg tool-call system';
-  
-  const roleLabel = document.createElement('span');
-  roleLabel.className = 'role';
-  roleLabel.textContent = '⚡ tool';
-  div.appendChild(roleLabel);
-  
-  const textSpan = document.createElement('span');
-  textSpan.className = 'text-content';
-  textSpan.textContent = toolName;
-  div.appendChild(textSpan);
-  
+  div.className = 'msg tool-call';
+  div.innerHTML = `<span class="role">⚡ tool</span><span class="text-content">${escapeHtml(toolName)}</span>`;
   container.appendChild(div);
 }
 
 function scrollToBottom(agentName) {
   const container = document.getElementById(`messages-${agentName}`);
-  if (!container) return;
-  requestAnimationFrame(() => {
-    container.scrollTop = container.scrollHeight;
-  });
+  requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
 }
 
 function setAgentStatus(agentName, status, detail) {
   const badge = document.getElementById(`status-${agentName}`);
   if (!badge) return;
-  badge.className = 'status-badge';
-  if (status === 'streaming') {
-    badge.classList.add('streaming');
-    badge.textContent = '● streaming';
-  } else if (status === 'tool') {
-    badge.classList.add('tool');
-    badge.textContent = `⚡ ${detail || 'tool'}`;
-  } else {
-    badge.textContent = 'idle';
-  }
+  badge.className = 'status-badge' + (status === 'streaming' ? ' streaming' : status === 'tool' ? ' tool' : '');
+  badge.textContent = status === 'streaming' ? '● streaming' : status === 'tool' ? `⚡ ${detail}` : 'idle';
 }
 
-// ── Send Message ──
+// Filters
+function toggleFilter(agentName, filterName) {
+  agentFilters[agentName][filterName] = !agentFilters[agentName][filterName];
+  const panel = document.querySelector(`[data-agent="${agentName}"]`);
+  panel.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', agentFilters[agentName][btn.dataset.filter]);
+  });
+  if (Object.keys(agentState[agentName].runs).length === 0) fetchHistory(agentName);
+}
+
+// Send message
 function sendMessage(agentName) {
   const input = document.getElementById(`input-${agentName}`);
   const text = input.value.trim();
   if (!text || !connected) return;
-
   input.value = '';
 
-  // Show user message immediately
   appendMessage(agentName, 'user', text, false);
   scrollToBottom(agentName);
+  showTypingIndicator(agentName);
 
-  // Determine session key — try primary, fall back to alt
-  const cfg = AGENTS[agentName];
-  const sessionKey = cfg.sessionKey;
-
+  const sessionKey = activeSessionKeys[agentName];
   const reqId = 'send-' + agentName + '-' + (++reqCounter);
-  const idemKey = uuid();
-
   pendingSendReqs[reqId] = agentName;
 
   ws.send(JSON.stringify({
-    type: 'req',
-    id: reqId,
-    method: 'chat.send',
-    params: {
-      sessionKey: sessionKey,
-      message: text,
-      idempotencyKey: idemKey,
-    }
+    type: 'req', id: reqId, method: 'chat.send',
+    params: { sessionKey, message: text, idempotencyKey: crypto.randomUUID?.() || '' + Math.random() }
   }));
-
   setAgentStatus(agentName, 'streaming');
-  console.log(`Sent to ${agentName} (${sessionKey}): ${text.substring(0, 50)}...`);
 }
 
-// ── Refresh ──
 function refreshHistories() {
   if (connected) fetchAllHistories();
 }
 
-// ── Keepalive + Auto-refresh ──
-setInterval(() => {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'ping' }));
-  }
-}, 30000);
-
-// Auto-refresh history every 15s to catch inter-agent messages
-setInterval(() => {
-  if (connected) fetchAllHistories();
-}, 15000);
-
-// ── Handle page visibility ──
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && ws && ws.readyState !== WebSocket.OPEN) {
-    connectGateway();
-  }
-});
+// Keepalive
+setInterval(() => { if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' })); }, 30000);
 </script>
 </body>
 </html>
